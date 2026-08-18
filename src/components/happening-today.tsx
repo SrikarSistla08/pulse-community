@@ -1,5 +1,4 @@
 import Link from "next/link"
-import Image from "next/image"
 import SectionHeader from "@/components/section-header"
 import type { Event } from "@/types"
 
@@ -16,7 +15,7 @@ export default function HappeningToday({ events }: { events: Event[] }) {
             href={`/events/${event.id}`}
             className="block border border-[var(--fg)] no-underline hover:bg-[var(--fg)] hover:text-[var(--bg)]"
           >
-            {event.image ? <div className="duotone"><Image src={event.image} alt={event.title} width={400} height={112} className="w-full h-28 object-cover border-b border-[var(--fg)]" /></div> : <div className="h-28 border-b border-[var(--fg)]" />}
+            {event.image ? <div className="duotone"><img src={event.image} alt={event.title} className="w-full h-28 object-cover border-b border-[var(--fg)]" /></div> : <div className="h-28 border-b border-[var(--fg)]" />}
             <div className="p-2.5">
               <div className="flex items-center justify-between mb-0.5">
                 <span className="text-[10px] font-bold uppercase tracking-wider">

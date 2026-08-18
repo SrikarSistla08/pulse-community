@@ -1,4 +1,6 @@
-import Image from "next/image"
+"use client"
+
+import { useState } from "react"
 
 interface BusinessImageProps {
   name: string
@@ -41,9 +43,17 @@ export default function BusinessImage({
 }: BusinessImageProps) {
   const source = variant === "cover" ? coverUrl : logoUrl
   const label = alt ?? (variant === "logo" ? `${name} logo` : name)
+  const [imgFailed, setImgFailed] = useState(false)
 
-  if (source) {
-    return <Image src={source} alt={label} width={200} height={200} className={className} />
+  if (source && !imgFailed) {
+    return (
+      <img
+        src={source}
+        alt={label}
+        className={className}
+        onError={() => setImgFailed(true)}
+      />
+    )
   }
 
   const color = fallbackColors[stableIndex(`${name}:${category}:${variant}`)]

@@ -1,5 +1,4 @@
 import Link from "next/link"
-import Image from "next/image"
 import { notFound } from "next/navigation"
 import EventActions from "@/components/event-actions"
 import { createClient } from "@/lib/supabase/server"
@@ -35,7 +34,7 @@ export default async function EventDetailPage({
       <article className="pulse-card mt-4 overflow-hidden">
         {event.image && (
           <div>
-            <Image src={event.image} alt={event.title} width={800} height={320} className="w-full h-48 sm:h-64 object-cover border-b border-[var(--hr)] duotone" />
+            <img src={event.image} alt={event.title} className="w-full h-48 sm:h-64 object-cover border-b border-[var(--hr)] duotone" />
           </div>
         )}
 
