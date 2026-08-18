@@ -1,36 +1,73 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Pulse
+
+Heartbeat of your community. A Next.js 16 + Supabase platform for local businesses, events, and community engagement.
+
+## Tech Stack
+
+- **Framework:** Next.js 16 (App Router, Turbopack)
+- **Database:** Supabase (PostgreSQL, Auth, RLS)
+- **Styling:** Tailwind CSS v4
+- **PWA:** Service worker, offline support, installable
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
+npm install
+cp .env.example .env.local   # fill in your Supabase credentials
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Environment Variables
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `NEXT_PUBLIC_SUPABASE_URL` | Yes | Supabase project URL |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Yes | Supabase anon/publishable key |
+| `NEXT_PUBLIC_VAPID_KEY` | No | VAPID public key for push notifications |
+| `VAPID_PRIVATE_KEY` | No | VAPID private key for push notifications |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Database Migrations
 
-## Learn More
+Run these in the Supabase SQL Editor:
 
-To learn more about Next.js, take a look at the following resources:
+```
+supabase/migrations/009_post_likes.sql
+supabase/migrations/010_event_rsvps.sql
+supabase/migrations/011_post_comments.sql
+supabase/migrations/012_push_subscriptions.sql
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Architecture
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```
+src/
+  app/              # Next.js App Router pages
+    businesses/     # Business directory + detail pages
+    events/         # Event listing + detail pages
+    check-in/       # QR check-in + rewards
+    dashboard/      # Role-based dashboards
+    admin/          # Admin overview
+    map/            # Interactive SVG map
+    account/        # User profile + activity
+  components/       # Shared React components
+  lib/
+    supabase/       # Client/server Supabase setup, queries, auth
+    auth.ts         # Role helpers
+    notifications.ts # Push notification sender
+  types/            # TypeScript type definitions
+public/
+  icons/            # PWA icons (192px, 512px)
+  sw.js             # Service worker
+  manifest.json     # PWA manifest
+```
 
-## Deploy on Vercel
+## Features
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **Community Feed** — Posts from businesses and members (announcements, hiring, volunteer, promotions)
+- **Business Directory** — Search, filter, follow local businesses
+- **Events** — RSVP to upcoming community events
+- **Check-In** — QR-based check-ins with rewards system
+- **Map** — Interactive SVG map of Arbutus, MD
+- **Push Notifications** — Subscribe to updates from followed businesses
+- **PWA** — Installable, works offline, app shortcuts
+- **Role-Based Access** — Student, Business, Organization, Admin roles

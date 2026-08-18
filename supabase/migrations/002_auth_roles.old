@@ -1,0 +1,51 @@
+-- Pulse Auth Roles Migration
+-- Run this in Supabase SQL Editor after 001_initial_schema.sql
+
+-- Add email column to profiles (was missing from initial schema)
+alter table public.profiles add column if not exists email text;
+
+-- Replace the new-user trigger to capture email + role from signup metadata
+create or replace function public.handle_new_user()
+returns trigger as $$
+begin
+  insert into public.profiles (id, full_name, email, avatar_url, role)
+  values (
+    new.id,
+    coalesce(new.raw_user_meta_data ->> 'full_name', new.raw_user_meta_data ->> 'name'),
+    new.email,
+    coalesce(new.raw_user_meta_data ->> 'avatar_url', null),
+    coalesce(new.raw_user_meta_data ->> 'role', 'student')
+  );
+  return new;
+end;
+$$ language plpgsql security definer;
+
+create or replace trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute function public.handle_new_user();
+
+-- Allow the signup flow to upsert the profile row if the trigger has not run yet
+create policy "Users can insert own profile" on public.profiles
+  for insert with check (auth.uid() = id);
+
+-- Optional Google OAuth metadata mapping
+create or replace function public.handle_google_user()
+returns trigger as $$
+declare
+  is_google boolean := new.app_metadata ->> 'provider' = 'google';
+begin
+  if is_google then
+    update public.profiles
+    set avatar_url = coalesce(
+      new.raw_user_meta_data ->> 'avatar_url',
+      new.raw_user_meta_data ->> 'picture'
+    )
+    where id = new.id;
+  end if;
+  return new;
+end;
+$$ language plpgsql security definer;
+
+create or replace trigger on_auth_user_updated
+  after update of raw_user_meta_data on auth.users
+  for each row execute function public.handle_google_user();

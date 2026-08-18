@@ -39,3 +39,13 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# env files
+.env.local
+.env*.local
+
+# scraped data
+scraped_data.json
+
+# icon generator
+public/generate-icons.js
