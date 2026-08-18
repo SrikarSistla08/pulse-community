@@ -42,15 +42,18 @@ const CATEGORY_COLORS: Record<string, string> = {
   default: "#6b5b4b",
 }
 
-const SEED_COORDS: Record<string, [number, number]> = {
-  "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa": [39.2465, -76.6947],
-  "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb": [39.2475, -76.6957],
-  "cccccccc-cccc-4ccc-8ccc-cccccccccccc": [39.2485, -76.6967],
-  "dddddddd-dddd-4ddd-8ddd-dddddddddddd": [39.2455, -76.6937],
-  "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee": [39.2495, -76.6927],
-}
-
 const ARBUTUS_CENTER: [number, number] = [39.2475, -76.6950]
+
+const BUSINESS_POSITIONS: [number, number][] = [
+  [39.2468, -76.6942],
+  [39.2480, -76.6958],
+  [39.2490, -76.6935],
+  [39.2460, -76.6965],
+  [39.2472, -76.6975],
+  [39.2485, -76.6920],
+  [39.2455, -76.6950],
+  [39.2495, -76.6960],
+]
 
 const MAP_TYPES = [
   { key: "default", label: "Standard" },
@@ -102,14 +105,13 @@ interface Spot {
 function buildSpots(businesses: Business[], posts: Post[], events: Event[]): Spot[] {
   const spots: Spot[] = []
 
-  businesses.forEach((b) => {
-    const coords = SEED_COORDS[b.id]
-    if (!coords) return
+  businesses.forEach((b, i) => {
+    const pos = BUSINESS_POSITIONS[i % BUSINESS_POSITIONS.length]
     spots.push({
       id: `b-${b.id}`,
       type: "business",
-      lat: coords[0],
-      lng: coords[1],
+      lat: pos[0],
+      lng: pos[1],
       title: b.name,
       subtitle: b.category,
       color: categoryColor(b.category),
@@ -118,14 +120,14 @@ function buildSpots(businesses: Business[], posts: Post[], events: Event[]): Spo
   })
 
   events.forEach((e, i) => {
-    const biz = businesses.find((b) => b.id === e.organizer.id)
-    const coords = biz ? SEED_COORDS[biz.id] : null
-    if (!coords) return
+    const bizIndex = businesses.findIndex((b) => b.id === e.organizer.id)
+    const biz = bizIndex >= 0 ? businesses[bizIndex] : null
+    const pos = biz ? BUSINESS_POSITIONS[bizIndex % BUSINESS_POSITIONS.length] : ARBUTUS_CENTER
     spots.push({
       id: `e-${e.id}`,
       type: "event",
-      lat: coords[0] + 0.0008 * Math.cos(i * 1.3),
-      lng: coords[1] + 0.0008 * Math.sin(i * 1.3),
+      lat: pos[0] + 0.0008 * Math.cos(i * 1.3),
+      lng: pos[1] + 0.0008 * Math.sin(i * 1.3),
       title: e.title,
       subtitle: `${e.date} · ${e.time}`,
       color: "#a03d2e",
@@ -136,14 +138,14 @@ function buildSpots(businesses: Business[], posts: Post[], events: Event[]): Spo
   posts
     .filter((p) => p.type === "hiring")
     .forEach((p, i) => {
-      const biz = businesses.find((b) => b.id === p.author.id)
-      const coords = biz ? SEED_COORDS[biz.id] : null
-      if (!coords) return
+      const bizIndex = businesses.findIndex((b) => b.id === p.author.id)
+      const biz = bizIndex >= 0 ? businesses[bizIndex] : null
+      const pos = biz ? BUSINESS_POSITIONS[bizIndex % BUSINESS_POSITIONS.length] : ARBUTUS_CENTER
       spots.push({
         id: `h-${p.id}`,
         type: "hiring",
-        lat: coords[0] + 0.001 * Math.cos(i * 2.1 + 1),
-        lng: coords[1] + 0.001 * Math.sin(i * 2.1 + 1),
+        lat: pos[0] + 0.001 * Math.cos(i * 2.1 + 1),
+        lng: pos[1] + 0.001 * Math.sin(i * 2.1 + 1),
         title: p.title,
         subtitle: `Hiring · ${p.author.name}`,
         color: "#2f6b66",
@@ -154,14 +156,14 @@ function buildSpots(businesses: Business[], posts: Post[], events: Event[]): Spo
   posts
     .filter((p) => p.type === "volunteer")
     .forEach((p, i) => {
-      const biz = businesses.find((b) => b.id === p.author.id)
-      const coords = biz ? SEED_COORDS[biz.id] : null
-      if (!coords) return
+      const bizIndex = businesses.findIndex((b) => b.id === p.author.id)
+      const biz = bizIndex >= 0 ? businesses[bizIndex] : null
+      const pos = biz ? BUSINESS_POSITIONS[bizIndex % BUSINESS_POSITIONS.length] : ARBUTUS_CENTER
       spots.push({
         id: `v-${p.id}`,
         type: "volunteer",
-        lat: coords[0] + 0.001 * Math.cos(i * 2.5 + 3),
-        lng: coords[1] + 0.001 * Math.sin(i * 2.5 + 3),
+        lat: pos[0] + 0.001 * Math.cos(i * 2.5 + 3),
+        lng: pos[1] + 0.001 * Math.sin(i * 2.5 + 3),
         title: p.title,
         subtitle: `Volunteer · ${p.author.name}`,
         color: "#3f6b3a",
@@ -408,7 +410,7 @@ export default function CommunityMap() {
 
         {/* Legend */}
         <div className="absolute top-2 left-2 z-[400] bg-[var(--bg)]/95 backdrop-blur-sm border border-[var(--hr)] px-2.5 py-1.5 text-[10px] text-[var(--dim)] shadow-sm">
-          {visible.length} spot{visible.length !== 1 ? "s" : ""} · Arbutus, Vancouver
+          {visible.length} spot{visible.length !== 1 ? "s" : ""} · Arbutus, MD
         </div>
 
         {/* Spot count badge */}

@@ -1,6 +1,5 @@
 "use client"
 
-import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 
@@ -19,6 +18,7 @@ export default function ProfileEditor({ fullName, avatarUrl, email }: ProfileEdi
   const [editing, setEditing] = useState(false)
   const [name, setName] = useState(fullName)
   const [avatar, setAvatar] = useState(avatarUrl)
+  const [avatarFailed, setAvatarFailed] = useState(false)
   const [error, setError] = useState("")
   const [status, setStatus] = useState("")
   const [saving, setSaving] = useState(false)
@@ -43,13 +43,22 @@ export default function ProfileEditor({ fullName, avatarUrl, email }: ProfileEdi
     router.refresh()
   }
 
+  const showAvatar = avatar && !avatarFailed
+
   return (
     <div>
       <div className="flex items-start gap-4">
-        {avatarUrl ? (
-          <Image src={avatarUrl} alt="Profile" width={96} height={96} className="h-24 w-24 object-cover duotone" />
+        {showAvatar ? (
+          <img
+            src={avatar}
+            alt="Profile"
+            className="h-24 w-24 object-cover duotone rounded-md"
+            onError={() => setAvatarFailed(true)}
+          />
         ) : (
-          <div className="h-24 w-24 bg-[var(--surface-muted)] flex items-center justify-center text-2xl">?</div>
+          <div className="h-24 w-24 bg-[var(--surface-muted)] flex items-center justify-center text-2xl font-bold text-[var(--fg)] rounded-md">
+            {initials(fullName)}
+          </div>
         )}
         <div className="min-w-0 flex-1">
           <h1 className="break-words text-lg font-bold">{fullName}</h1>
@@ -70,7 +79,8 @@ export default function ProfileEditor({ fullName, avatarUrl, email }: ProfileEdi
           </div>
           <div>
             <label className="mb-1 block text-xs text-[var(--muted)]" htmlFor="account-avatar-url">avatar URL (optional)</label>
-            <input id="account-avatar-url" type="url" value={avatar} onChange={(e) => setAvatar(e.target.value)} placeholder="https://" className="w-full text-sm" />
+            <input id="account-avatar-url" type="url" value={avatar} onChange={(e) => { setAvatar(e.target.value); setAvatarFailed(false) }} placeholder="https://example.com/photo.jpg" className="w-full text-sm" />
+            <p className="text-[10px] text-[var(--dim)] mt-1">Paste a direct image URL (ends in .jpg, .png, etc.)</p>
           </div>
           <p className="text-[11px] text-[var(--dim)]">Email and role are managed by authentication and admin controls.</p>
           <button onClick={save} disabled={saving} className="border border-[var(--fg)] px-3 py-2 text-xs hover:bg-[var(--fg)] hover:text-[var(--bg)] disabled:opacity-50">
