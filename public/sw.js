@@ -1,18 +1,6 @@
-const CACHE_NAME = "pulse-v2";
-const STATIC_ASSETS = [
-  "/",
-  "/businesses",
-  "/events",
-  "/map",
-  "/check-in",
-  "/manifest.json",
-  "/offline",
-];
+const CACHE_NAME = "pulse-v3";
 
-self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS))
-  );
+self.addEventListener("install", () => {
   self.skipWaiting();
 });
 
@@ -27,13 +15,29 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
-  if (event.request.url.includes("/api/")) {
+
+  const url = new URL(event.request.url);
+
+  // Never cache JS, CSS, or HTML — always network
+  if (
+    url.pathname.includes("/_next/") ||
+    url.pathname.endsWith(".js") ||
+    url.pathname.endsWith(".css") ||
+    event.request.mode === "navigate"
+  ) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+
+  // API: network first, fallback to cache
+  if (url.pathname.startsWith("/api/")) {
     event.respondWith(
       fetch(event.request).catch(() => caches.match(event.request))
     );
     return;
   }
 
+  // Images/fonts: stale-while-revalidate
   event.respondWith(
     caches.match(event.request).then((cached) => {
       const fetched = fetch(event.request).then((response) => {

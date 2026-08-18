@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import CommunityMap from "./community-map"
+import MapClient from "@/components/map-client"
 
 export const metadata: Metadata = {
   title: "Map — Pulse",
@@ -7,5 +7,5 @@ export const metadata: Metadata = {
 }
 
 export default function MapPage() {
-  return <CommunityMap />
+  return <MapClient />
 }

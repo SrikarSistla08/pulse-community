@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useState } from "react"
 import AuthShell from "@/components/auth/auth-shell"
 import GoogleButton from "@/components/auth/google-button"
@@ -13,12 +13,8 @@ import {
 
 export default function LoginForm() {
   const router = useRouter()
-  const [next] = useState(
-    () =>
-      typeof window !== "undefined"
-        ? new URLSearchParams(window.location.search).get("next") ?? ""
-        : ""
-  )
+  const searchParams = useSearchParams()
+  const next = searchParams.get("next") ?? ""
 
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")

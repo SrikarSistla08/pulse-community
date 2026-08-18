@@ -151,7 +151,7 @@ function mapBusiness(row: BusinessRow, followers: number, isFollowing: boolean):
   }
 }
 
-function mapPost(row: PostRow, businessesById: Map<string, Business>, followersById: Map<string, number>, userId: string | null): Post {
+function mapPost(row: PostRow, businessesById: Map<string, Business>, followersById: Map<string, number>, userId: string | null, likeCounts: Map<string, number>, commentCounts: Map<string, number>): Post {
   let author: Business
   if (row.business_id && row.businesses) {
     author =
@@ -185,8 +185,8 @@ function mapPost(row: PostRow, businessesById: Map<string, Business>, followersB
     image: row.image_url ?? undefined,
     eventId: row.event_id ?? undefined,
     createdAt: row.created_at,
-    likes: 0,
-    comments: 0,
+    likes: likeCounts.get(row.id) ?? 0,
+    comments: commentCounts.get(row.id) ?? 0,
   }
 }
 
@@ -229,6 +229,40 @@ function mapEvent(row: EventRow, followers = 0, isFollowing = false): Event {
     rsvpCount: 0,
     isRsvped: false,
   }
+}
+
+async function fetchLikeCounts(
+  supabase: SupabaseClient,
+  postIds: string[]
+): Promise<Map<string, number>> {
+  const counts = new Map<string, number>()
+  if (postIds.length === 0) return counts
+  const { data, error } = await supabase
+    .from("post_likes")
+    .select("post_id")
+    .in("post_id", postIds)
+  if (error) return counts
+  for (const row of data ?? []) {
+    counts.set(row.post_id, (counts.get(row.post_id) ?? 0) + 1)
+  }
+  return counts
+}
+
+async function fetchCommentCounts(
+  supabase: SupabaseClient,
+  postIds: string[]
+): Promise<Map<string, number>> {
+  const counts = new Map<string, number>()
+  if (postIds.length === 0) return counts
+  const { data, error } = await supabase
+    .from("post_comments")
+    .select("post_id")
+    .in("post_id", postIds)
+  if (error) return counts
+  for (const row of data ?? []) {
+    counts.set(row.post_id, (counts.get(row.post_id) ?? 0) + 1)
+  }
+  return counts
 }
 
 async function fetchFollowCounts(
@@ -397,10 +431,13 @@ export async function getPosts(
     return []
   }
   const rows = (data ?? []) as PostRow[]
-  const ids = rows.filter((r) => r.business_id).map((r) => r.business_id!) as string[]
-  const [counts, followed] = await Promise.all([
-    fetchFollowCounts(supabase, ids),
-    fetchFollowedIds(supabase, userId, ids),
+  const postIds = rows.map((r) => r.id)
+  const bizIds = rows.filter((r) => r.business_id).map((r) => r.business_id!) as string[]
+  const [counts, followed, likeCounts, commentCounts] = await Promise.all([
+    fetchFollowCounts(supabase, bizIds),
+    fetchFollowedIds(supabase, userId, bizIds),
+    fetchLikeCounts(supabase, postIds),
+    fetchCommentCounts(supabase, postIds),
   ])
   const businessesById = new Map<string, Business>()
   for (const row of rows) {
@@ -411,7 +448,7 @@ export async function getPosts(
       )
     }
   }
-  return rows.map((row) => mapPost(row, businessesById, counts, userId))
+  return rows.map((row) => mapPost(row, businessesById, counts, userId, likeCounts, commentCounts))
 }
 
 export async function getPostById(
@@ -430,9 +467,11 @@ export async function getPostById(
 
   const row = data as PostRow
   const businessIds = row.business_id ? [row.business_id] : []
-  const [counts, followed] = await Promise.all([
+  const [counts, followed, likeCounts, commentCounts] = await Promise.all([
     fetchFollowCounts(supabase, businessIds),
     fetchFollowedIds(supabase, userId, businessIds),
+    fetchLikeCounts(supabase, [row.id]),
+    fetchCommentCounts(supabase, [row.id]),
   ])
   const businessesById = new Map<string, Business>()
   if (row.business_id && row.businesses) {
@@ -441,7 +480,7 @@ export async function getPostById(
       mapBusiness(row.businesses, counts.get(row.business_id) ?? 0, followed.has(row.business_id))
     )
   }
-  return mapPost(row, businessesById, counts, userId)
+  return mapPost(row, businessesById, counts, userId, likeCounts, commentCounts)
 }
 
 export async function getEvents(
@@ -866,10 +905,13 @@ export async function getPostsByBusiness(
     .limit(20)
   if (error) return []
   const rows = (data ?? []) as PostRow[]
-  const ids = rows.filter((r) => r.business_id).map((r) => r.business_id!) as string[]
-  const [counts, followed] = await Promise.all([
-    fetchFollowCounts(supabase, ids),
-    fetchFollowedIds(supabase, userId, ids),
+  const postIds = rows.map((r) => r.id)
+  const bizIds = rows.filter((r) => r.business_id).map((r) => r.business_id!) as string[]
+  const [counts, followed, likeCounts, commentCounts] = await Promise.all([
+    fetchFollowCounts(supabase, bizIds),
+    fetchFollowedIds(supabase, userId, bizIds),
+    fetchLikeCounts(supabase, postIds),
+    fetchCommentCounts(supabase, postIds),
   ])
   const businessesById = new Map<string, Business>()
   for (const row of rows) {
@@ -880,7 +922,7 @@ export async function getPostsByBusiness(
       )
     }
   }
-  return rows.map((row) => mapPost(row, businessesById, counts, userId))
+  return rows.map((row) => mapPost(row, businessesById, counts, userId, likeCounts, commentCounts))
 }
 
 export async function getUserRsvps(
