@@ -41,13 +41,57 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ToastProvider>
           <Navbar />
           <main className="flex-1">{children}</main>
-          <footer className="border-t border-[var(--hr)] py-5 mt-auto">
-            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] text-[var(--dim)]">
-              <span className="font-bold text-[var(--fg)] tracking-wider">PULSE</span>
-              <span>&copy; {new Date().getFullYear()}</span>
-              <a href="https://the-valley-inc.vercel.app/" target="_blank" rel="noopener noreferrer" className="hover:text-[var(--fg)] transition-colors">TheValleyInc</a>
-              <span className="text-[var(--hr)]">·</span>
-              <PushNotifications />
+          <footer className="mt-auto">
+            <div className="border-t border-[var(--hr)] py-10">
+              <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div className="md:col-span-1">
+                  <h2 className="font-serif text-2xl font-bold tracking-wider mb-2">PULSE</h2>
+                  <p className="text-sm text-[var(--dim)] mb-4">Heartbeat of your community</p>
+                  <a href="https://the-valley-inc.vercel.app/" target="_blank" rel="noopener noreferrer" className="text-xs font-mono text-[var(--dim)] hover:text-[var(--fg)] transition-colors">
+                    TheValleyInc
+                  </a>
+                </div>
+
+                <div>
+                  <h3 className="font-mono text-xs uppercase tracking-widest mb-4 newspaper-label">Product</h3>
+                  <ul className="space-y-2 text-sm">
+                    <li><a href="#" className="hover:text-[var(--fg)] transition-colors">Feed</a></li>
+                    <li><a href="#" className="hover:text-[var(--fg)] transition-colors">Map</a></li>
+                    <li><a href="#" className="hover:text-[var(--fg)] transition-colors">Events</a></li>
+                    <li><a href="#" className="hover:text-[var(--fg)] transition-colors">Businesses</a></li>
+                  </ul>
+                </div>
+
+                <div>
+                  <h3 className="font-mono text-xs uppercase tracking-widest mb-4 newspaper-label">Company</h3>
+                  <ul className="space-y-2 text-sm">
+                    <li><a href="#" className="hover:text-[var(--fg)] transition-colors">About</a></li>
+                    <li><a href="#" className="hover:text-[var(--fg)] transition-colors">Blog</a></li>
+                    <li><a href="https://the-valley-inc.vercel.app/" target="_blank" rel="noopener noreferrer" className="hover:text-[var(--fg)] transition-colors">TheValleyInc</a></li>
+                  </ul>
+                </div>
+
+                <div>
+                  <h3 className="font-mono text-xs uppercase tracking-widest mb-4 newspaper-label">Resources</h3>
+                  <ul className="space-y-2 text-sm">
+                    <li><a href="#" className="hover:text-[var(--fg)] transition-colors">Dashboard</a></li>
+                    <li><a href="#" className="hover:text-[var(--fg)] transition-colors">Check-In</a></li>
+                    <li><a href="#" className="hover:text-[var(--fg)] transition-colors">Create Post</a></li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t border-[var(--hr)] py-4">
+              <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex flex-wrap items-center justify-between text-[11px] font-mono text-[var(--dim)]">
+                <div className="flex items-center gap-2">
+                  <PushNotifications />
+                  <span>&copy; {new Date().getFullYear()} PULSE. All rights reserved.</span>
+                </div>
+                <div>
+                  EDITION: VOL 1.0 | PRINTED IN ARBUTUS
+                </div>
+              </div>
             </div>
           </footer>
           <ServiceWorker />

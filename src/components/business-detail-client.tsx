@@ -52,7 +52,7 @@ export default function BusinessDetailClient({
       <div className="pulse-card mt-4 overflow-hidden">
         <BusinessImage name={business.name} category={business.category} logoUrl={business.logo} coverUrl={business.coverImage} variant="cover" className="h-28 w-full object-cover border-b border-[var(--hr)] sm:h-40 duotone" />
         <div className="p-5 sm:p-7">
-          <div className="flex items-start gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-start gap-3">
             <BusinessImage name={business.name} category={business.category} logoUrl={business.logo} className="-mt-10 h-14 w-14 shrink-0 object-cover duotone" />
             <div className="flex-1 min-w-0">
               <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
@@ -84,27 +84,28 @@ export default function BusinessDetailClient({
                 <p className="mt-1 text-xs text-[var(--muted)]">student discount available</p>
               )}
             </div>
-            <div className="flex flex-wrap gap-1.5 text-xs shrink-0">
-              <button
-                onClick={toggleFollow}
-                 className={`pulse-button ${
-                  following
-                    ? "border-[var(--fg)] bg-[var(--fg)] text-[var(--bg)]"
-                    : "border-[var(--fg)] hover:bg-[var(--fg)] hover:text-[var(--bg)]"
-                }`}
-              >
-                {following ? "following" : "follow"}
-              </button>
-                <button className="pulse-button">
-                 share
-               </button>
-               <Link
-                 href={`/check-in?business=${business.id}`}
-                 className="pulse-button"
-               >
-                 check in
-               </Link>
-            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-1.5 text-xs mt-3">
+            <button
+              onClick={toggleFollow}
+               className={`pulse-button ${
+                following
+                  ? "border-[var(--fg)] bg-[var(--fg)] text-[var(--bg)]"
+                  : "border-[var(--fg)] hover:bg-[var(--fg)] hover:text-[var(--bg)]"
+              }`}
+            >
+              {following ? "following" : "follow"}
+            </button>
+              <button className="pulse-button">
+               share
+             </button>
+             <Link
+               href={`/check-in?business=${business.id}`}
+               className="pulse-button"
+             >
+               check in
+             </Link>
           </div>
 
           {business.description && (

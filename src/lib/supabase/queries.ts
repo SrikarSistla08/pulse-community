@@ -31,7 +31,7 @@ export interface PostRow {
   image_url: string | null
   event_id: string | null
   created_at: string
-  profiles?: { id: string; full_name: string | null; avatar_url: string | null } | null
+  profiles?: { id: string; full_name: string | null; avatar_url: string | null; role: string | null } | null
   businesses?: BusinessRow | null
 }
 
@@ -155,12 +155,15 @@ function mapBusiness(row: BusinessRow, followers: number, isFollowing: boolean):
 
 function mapPost(row: PostRow, businessesById: Map<string, Business>, followersById: Map<string, number>, userId: string | null, likeCounts: Map<string, number>, commentCounts: Map<string, number>): Post {
   let author: Business
+  let authorRole: string | undefined
   if (row.business_id && row.businesses) {
     author =
       businessesById.get(row.business_id) ??
       mapBusiness(row.businesses, followersById.get(row.business_id) ?? 0, userId !== null)
+    authorRole = "business"
   } else if (row.profiles) {
     author = profileAsBusiness(row.profiles)
+    authorRole = row.profiles.role ?? undefined
   } else {
     author = {
       id: row.author_id,
@@ -180,6 +183,7 @@ function mapPost(row: PostRow, businessesById: Map<string, Business>, followersB
   return {
     id: row.id,
     author,
+    authorRole: authorRole as Post["authorRole"],
     businessId: row.business_id ?? undefined,
     type: row.type,
     title: row.title,
@@ -425,7 +429,7 @@ export async function getPosts(
   const { data, error } = await supabase
     .from("posts")
     .select(
-      "*, profiles!posts_author_id_fkey(id, full_name, avatar_url), businesses!posts_business_id_fkey(*)"
+      "*, profiles!posts_author_id_fkey(id, full_name, avatar_url, role), businesses!posts_business_id_fkey(*)"
     )
     .order("created_at", { ascending: false })
   if (error) {
@@ -461,7 +465,7 @@ export async function getPostById(
   const { data, error } = await supabase
     .from("posts")
     .select(
-      "*, profiles!posts_author_id_fkey(id, full_name, avatar_url), businesses!posts_business_id_fkey(*)"
+      "*, profiles!posts_author_id_fkey(id, full_name, avatar_url, role), businesses!posts_business_id_fkey(*)"
     )
     .eq("id", postId)
     .maybeSingle()
@@ -947,7 +951,7 @@ export async function getPostsByBusiness(
 ): Promise<Post[]> {
   const { data, error } = await supabase
     .from("posts")
-    .select("*, profiles!posts_author_id_fkey(id, full_name, avatar_url), businesses!posts_business_id_fkey(*)")
+    .select("*, profiles!posts_author_id_fkey(id, full_name, avatar_url, role), businesses!posts_business_id_fkey(*)")
     .eq("business_id", businessId)
     .order("created_at", { ascending: false })
     .limit(20)

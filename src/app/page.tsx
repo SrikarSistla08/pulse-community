@@ -35,17 +35,22 @@ export default async function HomePage() {
   return (
     <main className="pulse-shell">
       <HeroSpotlight events={happeningToday} businesses={businesses} posts={posts} />
-      <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_18rem]">
-        <div className="min-w-0 space-y-10">
 
-          <hr />
+      <div className="my-6">
+        <div className="newspaper-marquee">
+          <div className="newspaper-marquee-inner">
+            {`/// LOCAL BUSINESSES: ${businesses.length} ACTIVE /// COMMUNITY EVENTS: ${events.length} UPCOMING /// CHECK-INS RECORDED DAILY /// SUPPORTING ARBUTUS SINCE 2025 ///`}
+          </div>
+        </div>
+      </div>
 
-          <NearbyBusinesses businesses={businesses} />
-
-          <hr />
+      <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_18rem]">
+        <div className="min-w-0 space-y-8">
 
           <section>
-            <SectionHeader label="community feed" count={posts.length} />
+            <h2 className="font-serif text-2xl font-bold pb-2 mb-4" style={{ borderBottom: "1px solid var(--fg)" }}>
+              Community Feed ({posts.length})
+            </h2>
             <div>
               {posts.map((post) => (
                 <PostCard key={post.id} post={post} />
@@ -53,22 +58,20 @@ export default async function HomePage() {
             </div>
           </section>
 
-          <hr />
-
           <section>
-            <SectionHeader label="upcoming events" count={events.length} />
-            <div className="grid gap-2 sm:grid-cols-2">
+            <h2 className="font-serif text-2xl font-bold pb-2 mb-4" style={{ borderBottom: "1px solid var(--fg)" }}>
+              Upcoming Events ({events.length})
+            </h2>
+            <div className="grid gap-3 sm:grid-cols-2">
               {events.map((event) => (
                 <EventCard key={event.id} event={event} />
               ))}
             </div>
           </section>
 
-          <hr />
+          <NearbyBusinesses businesses={businesses} />
 
           <HiringAndVolunteer posts={posts} />
-
-          <hr />
 
           <ExploreCommunity businesses={businesses} />
         </div>

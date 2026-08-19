@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
 import { isSupabaseConfigured } from "@/lib/supabase/config"
 import { getPosts, getEvents, getBusinesses } from "@/lib/supabase/queries"
@@ -101,9 +102,13 @@ export default async function AdminDashboardPage() {
         </div>
       </div>
 
-      <div className="border border-dashed border-[var(--hr)] p-5 text-xs text-[var(--dim)]">
-        Admin accounts are assigned manually via the Supabase dashboard.
-        Future tools: user moderation, business verification, and analytics exports.
+      <div className="flex flex-wrap gap-3 mt-6">
+        <Link
+          href="/admin/users"
+          className="border border-[var(--hr)] px-4 py-2.5 text-xs hover:border-[var(--fg)] transition-colors"
+        >
+          manage users &rarr;
+        </Link>
       </div>
     </div>
   )

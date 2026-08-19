@@ -34,6 +34,7 @@ import type { PostType } from "@/lib/posts"
 export interface Post {
   id: string
   author: Business
+  authorRole?: UserRole
   type: PostType
   businessId?: string
   title: string

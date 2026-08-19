@@ -37,26 +37,27 @@ export default function EventCard({ event }: { event: Event }) {
   return (
     <article className="pulse-card overflow-hidden">
       {event.image && (
-        <div className="border-b border-[var(--hr)] duotone">
+        <div className="border-b border-[var(--hr)]">
           <img
             src={event.image}
             alt=""
-            className="w-full h-32 object-cover"
+            className="w-full h-32 object-cover border border-[var(--hr)] filter grayscale"
+            style={{ borderRadius: 0 }}
           />
         </div>
       )}
       <div className="p-4">
-        <div className="text-xs text-[var(--muted)] mb-1">
+        <div className="font-mono text-[10px] uppercase tracking-[0.15em] text-[var(--muted)] mb-1">
           {event.category} &mdash; {event.organizer.name}
         </div>
 
-        <h3 className="mb-2 text-lg font-bold leading-tight tracking-tight">
+        <h3 className="font-serif mb-2 text-lg font-bold leading-tight tracking-tight">
           <Link href={`/events/${event.id}`} className="hover:underline">
             {event.title}
           </Link>
         </h3>
 
-        <div className="mb-3 space-y-1 text-xs text-[var(--fg)]">
+        <div className="font-mono mb-3 space-y-1 text-[10px] uppercase tracking-wider text-[var(--fg)]">
           <div className="flex items-center gap-1.5"><Calendar size={12} strokeWidth={1.75} /> {event.date}</div>
           <div className="flex items-center gap-1.5"><Clock size={12} strokeWidth={1.75} /> {event.time}</div>
           <div className="flex items-center gap-1.5"><MapPin size={12} strokeWidth={1.75} /> {event.location}</div>
@@ -65,7 +66,7 @@ export default function EventCard({ event }: { event: Event }) {
         <div className="flex items-center gap-2 flex-wrap">
           <button
             onClick={toggleRsvp}
-            className={`text-[10px] border px-2 py-0.5 ${
+            className={`font-mono text-[10px] uppercase tracking-wider border px-2 py-0.5 ${
               rsvped
                 ? "bg-[var(--fg)] text-[var(--bg)] border-[var(--fg)]"
                 : "border-[var(--hr)] hover:border-[var(--fg)]"
@@ -74,18 +75,18 @@ export default function EventCard({ event }: { event: Event }) {
             {rsvped ? "going ✓" : "+ rsvp"}
           </button>
           {rsvpCount > 0 && (
-            <span className="text-[10px] text-[var(--muted)]">
+            <span className="font-mono text-[10px] uppercase tracking-wider text-[var(--muted)]">
               {rsvpCount} {rsvpCount === 1 ? "person" : "people"} going
             </span>
           )}
           {event.capacity && (
-            <span className="text-[10px] text-[var(--dim)]">
+            <span className="font-mono text-[10px] uppercase tracking-wider text-[var(--dim)]">
               {event.capacity} spots
             </span>
           )}
           <Link
             href={`/events/${event.id}`}
-            className="text-[10px] text-[var(--muted)] hover:underline ml-auto"
+            className="font-mono text-[10px] uppercase tracking-wider text-[var(--muted)] hover:underline ml-auto"
           >
             details →
           </Link>

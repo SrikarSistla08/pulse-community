@@ -69,51 +69,51 @@ export default function CommentThread({ postId, open }: { postId: string; open: 
     }
   }
 
-  return (
-    <div className="mt-2">
-      {open && (
-        <div className="space-y-1">
-          {loading ? (
-            <div className="pulse-skeleton h-6 w-full" />
-          ) : (
-            comments.map((c) => (
-              <div key={c.id} className="group flex items-baseline gap-2 text-[12px] leading-snug">
-                <span className="font-semibold shrink-0">{c.userName}</span>
-                <span className="flex-1 text-[var(--fg)]/80">{c.content}</span>
-                <div className="flex items-center gap-1.5 shrink-0">
-                  <button
-                    onClick={() => handleLike(c)}
-                    className={`transition-colors ${c.likedByUser ? "text-[var(--post-event)]" : "text-[var(--dim)] hover:text-[var(--post-event)]"}`}
-                  >
-                    <Heart size={10} strokeWidth={1.5} fill={c.likedByUser ? "currentColor" : "none"} />
-                  </button>
-                  <span className="text-[10px] text-[var(--dim)]">{relativeTime(c.createdAt)}</span>
-                  {user?.id === c.userId && (
-                    <button
-                      onClick={() => handleDelete(c.id)}
-                      className="text-[var(--dim)] hover:text-[var(--danger)] opacity-0 group-hover:opacity-100 transition-opacity text-[10px]"
-                    >
-                      x
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-      )}
+  if (!open) return null
 
-      <form onSubmit={handleSubmit} className="flex gap-1 mt-1.5">
+  return (
+    <div className="border-t border-[var(--hr)] pt-3 mt-3">
+      {loading ? (
+        <div className="pulse-skeleton h-6 w-full" />
+      ) : comments.length > 0 ? (
+        <div className="space-y-2 mb-3">
+          {comments.map((c) => (
+            <div key={c.id} className="group flex items-baseline gap-2 text-[12px] leading-snug">
+              <span className="font-mono font-semibold text-[10px] uppercase tracking-wider shrink-0">{c.userName}</span>
+              <span className="flex-1 text-[var(--fg)]/80">{c.content}</span>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button
+                  onClick={() => handleLike(c)}
+                  className={`transition-colors ${c.likedByUser ? "text-[var(--post-event)]" : "text-[var(--dim)] hover:text-[var(--post-event)]"}`}
+                >
+                  <Heart size={10} strokeWidth={1.5} fill={c.likedByUser ? "currentColor" : "none"} />
+                </button>
+                <span className="font-mono text-[9px] text-[var(--dim)]">{relativeTime(c.createdAt)}</span>
+                {user?.id === c.userId && (
+                  <button
+                    onClick={() => handleDelete(c.id)}
+                    className="text-[var(--dim)] hover:text-[var(--danger)] opacity-0 group-hover:opacity-100 transition-opacity text-[10px]"
+                  >
+                    x
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : null}
+
+      <form onSubmit={handleSubmit} className="flex gap-1">
         <input
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder="comment..."
-          className="flex-1 text-[12px] px-2 py-1 border border-[var(--hr)] bg-transparent focus:outline-none focus:border-[var(--fg)]"
+          placeholder="write a comment..."
+          className="flex-1 text-[11px] px-2 py-1 border border-[var(--hr)] bg-transparent focus:outline-none focus:border-[var(--fg)] font-mono"
         />
         <button
           type="submit"
           disabled={sending || !text.trim()}
-          className="text-[10px] text-[var(--muted)] hover:text-[var(--fg)] disabled:opacity-30 px-1"
+          className="font-mono text-[9px] uppercase tracking-wider text-[var(--muted)] hover:text-[var(--fg)] disabled:opacity-30 px-2"
         >
           post
         </button>

@@ -59,10 +59,10 @@ export default function LiveActivity({ posts, events }: { posts: Post[]; events:
   return (
     <div>
       <div className="flex items-center gap-2 mb-3">
-        <h3 className="text-xs font-bold text-[var(--muted)] uppercase tracking-wider">
+        <h3 className="font-mono text-[10px] font-bold tracking-[0.16em] uppercase text-[var(--fg)] border-b border-[var(--fg)] pb-2">
                     live activity
         </h3>
-        <span className="relative flex h-2 w-2">
+        <span className="relative flex h-2 w-2 pb-2">
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--post-event)] opacity-75" />
           <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--post-event)]" />
         </span>

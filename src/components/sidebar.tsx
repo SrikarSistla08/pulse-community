@@ -12,11 +12,13 @@ export default function Sidebar({ businesses, posts, events }: { businesses: Bus
   ]
 
   return (
-    <aside className="space-y-8">
-      <LiveActivity posts={posts} events={events} />
+    <aside className="space-y-6">
+      <div className="border border-[var(--hr)] p-4">
+        <LiveActivity posts={posts} events={events} />
+      </div>
 
-      <div>
-        <h3 className="text-xs font-bold text-[var(--muted)] uppercase tracking-wider mb-3">
+      <div className="border border-[var(--hr)] p-4">
+        <h3 className="font-mono text-[10px] font-bold tracking-[0.16em] uppercase text-[var(--fg)] border-b border-[var(--fg)] pb-2 mb-3">
           community activity
         </h3>
         <ul className="space-y-2 text-[15px]">
@@ -29,8 +31,8 @@ export default function Sidebar({ businesses, posts, events }: { businesses: Bus
         </ul>
       </div>
 
-      <div>
-        <h3 className="text-xs font-bold text-[var(--muted)] uppercase tracking-wider mb-3">
+      <div className="border border-[var(--hr)] p-4">
+        <h3 className="font-mono text-[10px] font-bold tracking-[0.16em] uppercase text-[var(--fg)] border-b border-[var(--fg)] pb-2 mb-3">
           trending
         </h3>
         <ul className="space-y-2 text-[15px]">

@@ -5,11 +5,8 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { useState } from "react"
 import AuthShell from "@/components/auth/auth-shell"
 import GoogleButton from "@/components/auth/google-button"
-import RoleSelect from "@/components/auth/role-select"
-import { isSupabaseConfigured, signUpWithPassword } from "@/lib/auth-client"
-import { homeForRole, type Role } from "@/lib/auth"
+import { isSupabaseConfigured, signUpWithPassword, resolveRoleHome } from "@/lib/auth-client"
 import { MailCheck } from "lucide-react"
-import { resolveRoleHome } from "@/lib/auth-client"
 
 export default function SignupForm() {
   const router = useRouter()
@@ -19,7 +16,6 @@ export default function SignupForm() {
   const [fullName, setFullName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const [role, setRole] = useState<Role>("student")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [confirmSent, setConfirmSent] = useState(false)
@@ -39,7 +35,7 @@ export default function SignupForm() {
       fullName,
       email,
       password,
-      role,
+      role: "student",
     })
 
     setLoading(false)
@@ -84,8 +80,7 @@ export default function SignupForm() {
           <p className="text-xs text-[var(--muted)] mb-4">
             We sent a confirmation link to <span className="font-bold">{email}</span>.
             <br />
-            Once confirmed you&apos;ll be redirected to{" "}
-            <span className="font-bold">{homeForRole(role)}</span> as a {role}.
+            Once confirmed you&apos;ll be redirected to your feed.
           </p>
           <Link
             href="/login"
@@ -153,8 +148,6 @@ export default function SignupForm() {
           />
         </div>
 
-        <RoleSelect value={role} onChange={setRole} />
-
         <button
           type="submit"
           disabled={loading}
@@ -180,7 +173,7 @@ export default function SignupForm() {
           </Link>
         </p>
         <p className="mt-1 text-[11px] text-[var(--dim)]">
-          admin accounts are assigned manually
+          business &amp; admin roles are assigned by admin
         </p>
       </div>
     </AuthShell>

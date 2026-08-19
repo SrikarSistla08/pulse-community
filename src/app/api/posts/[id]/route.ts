@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { canManageBusiness } from "@/lib/business-access"
+import { getCurrentRole } from "@/lib/business-access"
 import { POST_TYPES } from "@/lib/posts"
 import { NextResponse } from "next/server"
 
@@ -56,14 +57,19 @@ export async function DELETE(
   const { id } = await params
   const { data: post, error: postError } = await supabase
     .from("posts")
-    .select("business_id")
+    .select("business_id, author_id")
     .eq("id", id)
     .maybeSingle()
 
   if (postError || !post) {
     return NextResponse.json({ error: "post not found" }, { status: 404 })
   }
-  if (!post.business_id || !(await canManageBusiness(supabase, user, post.business_id))) {
+
+  const role = await getCurrentRole(supabase, user)
+  const isOwner = post.business_id ? await canManageBusiness(supabase, user, post.business_id) : post.author_id === user.id
+  const isAdmin = role === "admin"
+
+  if (!isOwner && !isAdmin) {
     return NextResponse.json({ error: "not authorized to delete this post" }, { status: 403 })
   }
 
