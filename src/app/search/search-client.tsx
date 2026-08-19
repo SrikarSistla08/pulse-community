@@ -4,6 +4,7 @@ import Link from "next/link"
 import { Suspense, useMemo, useState } from "react"
 import type { Business, Post, Event } from "@/types"
 import BusinessImage from "@/components/business-image"
+import { Search } from "lucide-react"
 
 type SearchClientProps = {
   businesses: Business[]
@@ -65,7 +66,7 @@ function SearchInner({ businesses, posts, events, initialQuery }: SearchClientPr
           className="flex-1 bg-transparent px-3 py-2.5 text-sm focus:outline-none"
         />
         <span className="border-l border-[var(--hr)] px-3 py-2.5 text-xs text-[var(--dim)] flex items-center">
-          &#128269;
+          <Search size={14} strokeWidth={1.75} />
         </span>
       </form>
 

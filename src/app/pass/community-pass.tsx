@@ -68,7 +68,7 @@ export default function CommunityPass() {
 
       <div className="pulse-card mb-6 flex items-center gap-5 p-5 sm:p-7">
         <div className="border border-[var(--hr)] p-2 shrink-0">
-          <QrCode value={`pulse:pass:${user?.id ?? "guest"}`} size={96} />
+          <QrCode value={`${typeof window !== "undefined" ? window.location.origin : ""}/pass?user=${user?.id ?? "guest"}`} size={96} />
         </div>
         <div className="text-xs text-[var(--muted)] leading-relaxed">
           <div className="text-[10px] font-bold uppercase tracking-wider mb-1">member</div>

@@ -6,6 +6,7 @@ import { useSupabase } from "@/lib/supabase/hooks"
 import { followBusiness, unfollowBusiness } from "@/lib/supabase/queries"
 import type { Business } from "@/types"
 import BusinessImage from "@/components/business-image"
+import { MapPin } from "lucide-react"
 
 export default function BusinessesClient({ businesses }: { businesses: Business[] }) {
   const supabase = useSupabase()
@@ -77,7 +78,7 @@ export default function BusinessesClient({ businesses }: { businesses: Business[
                 <h3 className="text-sm font-bold truncate">{b.name}</h3>
                 <p className="text-xs text-[var(--muted)] group-hover:text-[var(--bg)]/70">{b.category}</p>
                 <p className="text-xs mt-0.5 text-[var(--muted)] group-hover:text-[var(--bg)]/70">
-                  &#9906; {b.location}
+                  <MapPin size={10} strokeWidth={1.75} /> {b.location}
                 </p>
                 {b.description && <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-[var(--muted)] group-hover:text-[var(--fg)]">{b.description}</p>}
                 <p className="mt-2 text-[10px] text-[var(--dim)]">{b.followers} followers</p>

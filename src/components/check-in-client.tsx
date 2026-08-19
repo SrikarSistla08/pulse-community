@@ -111,7 +111,7 @@ export default function CheckInClient({
 
       <div className="pulse-card mb-6 flex items-center gap-5 p-5 sm:p-7">
         <div className="shrink-0 border border-[var(--hr)] bg-[var(--surface)] p-2">
-          <QrCode value={`pulse:check-in:${user?.id ?? "member"}`} size={112} />
+          <QrCode value={`${typeof window !== "undefined" ? window.location.origin : ""}/check-in`} size={112} />
         </div>
         <div>
           <p className="pulse-kicker">your Pulse pass</p>

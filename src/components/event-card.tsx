@@ -6,6 +6,7 @@ import { useState } from "react"
 import { useSupabase, useCurrentUser } from "@/lib/supabase/hooks"
 import { rsvpEvent, unrsvpEvent } from "@/lib/supabase/queries"
 import { useToast } from "@/components/toast"
+import { Calendar, Clock, MapPin } from "lucide-react"
 import type { Event } from "@/types"
 
 export default function EventCard({ event }: { event: Event }) {
@@ -56,9 +57,9 @@ export default function EventCard({ event }: { event: Event }) {
         </h3>
 
         <div className="mb-3 space-y-1 text-xs text-[var(--fg)]">
-          <div>&#128197; {event.date}</div>
-          <div>&#128338; {event.time}</div>
-          <div>&#9906; {event.location}</div>
+          <div className="flex items-center gap-1.5"><Calendar size={12} strokeWidth={1.75} /> {event.date}</div>
+          <div className="flex items-center gap-1.5"><Clock size={12} strokeWidth={1.75} /> {event.time}</div>
+          <div className="flex items-center gap-1.5"><MapPin size={12} strokeWidth={1.75} /> {event.location}</div>
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">

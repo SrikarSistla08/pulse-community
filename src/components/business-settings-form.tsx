@@ -2,8 +2,10 @@
 
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useState } from "react"
+import { useState, useRef, useCallback } from "react"
 import BusinessImage from "@/components/business-image"
+import ImageUpload from "@/components/image-upload"
+import QrCode from "@/components/qr-code"
 
 const categories = ["Restaurant", "Cafe", "Retail", "Services", "Entertainment", "Fitness", "Other"]
 
@@ -21,6 +23,7 @@ interface BusinessSettings {
   logo_url: string | null
   cover_url: string | null
   student_discount: boolean
+  qr_token: string | null
 }
 
 export default function BusinessSettingsForm({ business }: { business: BusinessSettings }) {
@@ -42,6 +45,26 @@ export default function BusinessSettingsForm({ business }: { business: BusinessS
   const [status, setStatus] = useState("")
   const [error, setError] = useState("")
   const [saving, setSaving] = useState(false)
+  const qrCanvasRef = useRef<HTMLCanvasElement>(null)
+
+  const qrUrl = business.qr_token
+    ? `${typeof window !== "undefined" ? window.location.origin : ""}/check-in/scan?token=${business.qr_token}`
+    : ""
+
+  const downloadQr = useCallback(async () => {
+    if (!qrCanvasRef.current) return
+    const QRCode = (await import("qrcode")).default
+    const canvas = document.createElement("canvas")
+    await QRCode.toCanvas(canvas, qrUrl, {
+      width: 400,
+      margin: 2,
+      color: { dark: "#1a1a1a", light: "#ffffff" },
+    })
+    const link = document.createElement("a")
+    link.download = `${business.name.replace(/\s+/g, "-").toLowerCase()}-qr.png`
+    link.href = canvas.toDataURL("image/png")
+    link.click()
+  }, [qrUrl, business.name])
 
   function update(field: keyof typeof form, value: string | boolean) {
     setForm((current) => ({ ...current, [field]: value }))
@@ -115,14 +138,18 @@ export default function BusinessSettingsForm({ business }: { business: BusinessS
             <textarea id="settings-description" value={form.description} onChange={(e) => update("description", e.target.value)} className="h-24 w-full resize-none text-sm" />
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
-            <div>
-              <label className="mb-1 block text-xs text-[var(--muted)]" htmlFor="settings-logo">logo URL</label>
-              <input id="settings-logo" type="url" placeholder="https://" value={form.logo_url} onChange={(e) => update("logo_url", e.target.value)} className="w-full text-sm" />
-            </div>
-            <div>
-              <label className="mb-1 block text-xs text-[var(--muted)]" htmlFor="settings-cover">cover image URL</label>
-              <input id="settings-cover" type="url" placeholder="https://" value={form.cover_url} onChange={(e) => update("cover_url", e.target.value)} className="w-full text-sm" />
-            </div>
+            <ImageUpload
+              value={form.logo_url}
+              onChange={(url) => update("logo_url", url)}
+              variant="logo"
+              label="logo"
+            />
+            <ImageUpload
+              value={form.cover_url}
+              onChange={(url) => update("cover_url", url)}
+              variant="cover"
+              label="cover image"
+            />
           </div>
         </fieldset>
 
@@ -153,6 +180,33 @@ export default function BusinessSettingsForm({ business }: { business: BusinessS
             offers a student discount
           </label>
         </fieldset>
+
+        {business.qr_token && (
+          <fieldset className="pulse-card space-y-3 p-5 sm:p-6">
+            <legend className="pulse-kicker">check-in QR code</legend>
+            <p className="text-xs text-[var(--muted)]">
+              Print this QR code and place it at your counter. Customers scan it to check in and unlock rewards.
+            </p>
+            <div className="flex items-center gap-5">
+              <div className="border border-[var(--hr)] p-3 bg-white shrink-0">
+                <div className="hidden">
+                  <canvas ref={qrCanvasRef} />
+                </div>
+                <QrCode value={qrUrl} size={160} />
+              </div>
+              <div className="text-xs text-[var(--muted)] space-y-2">
+                <p className="break-all font-mono text-[10px]">{qrUrl}</p>
+                <button
+                  type="button"
+                  onClick={downloadQr}
+                  className="border border-[var(--hr)] px-3 py-1.5 text-[11px] hover:border-[var(--fg)] transition-colors"
+                >
+                  download QR
+                </button>
+              </div>
+            </div>
+          </fieldset>
+        )}
 
         <div className="flex flex-wrap gap-2">
           <button type="submit" disabled={saving} className="pulse-button pulse-button-primary disabled:opacity-50">

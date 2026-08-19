@@ -6,7 +6,7 @@ import PostCard from "@/components/post-card"
 import EventCard from "@/components/event-card"
 import SectionHeader from "@/components/section-header"
 import Sidebar from "@/components/sidebar"
-import HappeningToday from "@/components/happening-today"
+import HeroSpotlight from "@/components/hero-spotlight"
 import NearbyBusinesses from "@/components/nearby-businesses"
 import HiringAndVolunteer from "@/components/hiring-volunteer"
 import ExploreCommunity from "@/components/explore-community"
@@ -34,14 +34,9 @@ export default async function HomePage() {
 
   return (
     <main className="pulse-shell">
-      <div className="mb-14 max-w-2xl mx-auto text-center">
-        <p className="pulse-kicker">the local pulse</p>
-        <h1 className="pulse-title">What&apos;s happening around you.</h1>
-        <p className="pulse-lede mx-auto">Discover independent places, community energy, and the next reason to go somewhere.</p>
-      </div>
+      <HeroSpotlight events={happeningToday} businesses={businesses} posts={posts} />
       <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_18rem]">
         <div className="min-w-0 space-y-10">
-          <HappeningToday events={happeningToday} />
 
           <hr />
 
@@ -51,7 +46,7 @@ export default async function HomePage() {
 
           <section>
             <SectionHeader label="community feed" count={posts.length} />
-            <div className="space-y-4">
+            <div>
               {posts.map((post) => (
                 <PostCard key={post.id} post={post} />
               ))}

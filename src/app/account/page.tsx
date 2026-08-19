@@ -5,9 +5,10 @@ import { createClient } from "@/lib/supabase/server"
 import { isSupabaseConfigured } from "@/lib/supabase/config"
 import { isRole, type Role } from "@/lib/auth"
 import { relativeTime } from "@/lib/supabase/queries"
-import { getBusinessCheckIns, getFollowedBusinesses, getNotificationsForUser, getRewardsForUser, getSavedPosts, getUserRsvps, getUserComments } from "@/lib/supabase/queries"
+import { getFollowedBusinesses, getNotificationsForUser, getSavedPosts, getUserRsvps, getUserComments } from "@/lib/supabase/queries"
 import ProfileEditor from "@/components/profile-editor"
 import PostCard from "@/components/post-card"
+import CommunityPassCard from "@/components/community-pass-card"
 
 const ROLE_LABELS: Record<Role, string> = {
   student: "Student",
@@ -32,10 +33,8 @@ export default async function AccountPage() {
   } = await supabase.auth.getUser()
   if (!user) redirect("/login?next=/account")
 
-  const [{ data: profile }, checkIns, rewards, following, savedPosts, notifications, rsvps, comments] = await Promise.all([
+  const [{ data: profile }, following, savedPosts, notifications, rsvps, comments] = await Promise.all([
     supabase.from("profiles").select("full_name, email, avatar_url, role, created_at").eq("id", user.id).maybeSingle(),
-    getBusinessCheckIns(supabase, user.id),
-    getRewardsForUser(supabase, user.id),
     getFollowedBusinesses(supabase, user.id),
     getSavedPosts(supabase, user.id),
     getNotificationsForUser(supabase, user.id),
@@ -53,40 +52,20 @@ export default async function AccountPage() {
       <div className="mb-10 max-w-2xl">
         <p className="pulse-kicker">personal space</p>
         <h1 className="pulse-title">Your Pulse</h1>
-        <p className="pulse-lede">A living record of the places, people, and moments that make your community yours.</p>
+        <p className="pulse-lede">Every business you visit, every offer you use — all in one place.</p>
       </div>
 
-      <div className="grid gap-10 lg:grid-cols-[280px_1fr]">
-        {/* Left column: profile + stats */}
+      <div className="grid gap-10 lg:grid-cols-[320px_1fr]">
+        {/* Left column: pass + profile */}
         <div className="space-y-6">
+          <CommunityPassCard />
+
           <section id="profile" className="pulse-card p-5">
             <ProfileEditor fullName={fullName} avatarUrl={profile?.avatar_url ?? ""} email={email} />
             <div className="mt-4 border-t border-[var(--hr)] pt-3 text-xs text-[var(--muted)]">
               <span>{ROLE_LABELS[role]}</span>
               <span className="mx-2">·</span>
               <span>Member since {displayDate(memberSince)}</span>
-            </div>
-          </section>
-
-          <section aria-labelledby="pulse-summary">
-            <h2 id="pulse-summary" className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] mb-3">your pulse</h2>
-            <div className="grid grid-cols-2 gap-3">
-              <a href="#check-ins" className="pulse-card p-3 no-underline text-center hover:shadow-md transition-shadow">
-                <p className="text-2xl font-bold">{checkIns.length}</p>
-                <p className="text-[10px] text-[var(--muted)] uppercase tracking-wider mt-0.5">check-ins</p>
-              </a>
-              <a href="#following" className="pulse-card p-3 no-underline text-center hover:shadow-md transition-shadow">
-                <p className="text-2xl font-bold">{following.length}</p>
-                <p className="text-[10px] text-[var(--muted)] uppercase tracking-wider mt-0.5">following</p>
-              </a>
-              <a href="#saved" className="pulse-card p-3 no-underline text-center hover:shadow-md transition-shadow">
-                <p className="text-2xl font-bold">{savedPosts.length}</p>
-                <p className="text-[10px] text-[var(--muted)] uppercase tracking-wider mt-0.5">saved</p>
-              </a>
-              <a href="#rewards" className="pulse-card p-3 no-underline text-center hover:shadow-md transition-shadow">
-                <p className="text-2xl font-bold">{rewards.length}</p>
-                <p className="text-[10px] text-[var(--muted)] uppercase tracking-wider mt-0.5">rewards</p>
-              </a>
             </div>
           </section>
 
@@ -108,29 +87,8 @@ export default async function AccountPage() {
 
         {/* Right column: activity feed */}
         <div className="space-y-8">
-          <section id="check-ins" aria-labelledby="recent-activity">
-            <div className="mb-2 flex items-baseline justify-between">
-              <h2 id="recent-activity" className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted)]">recent activity</h2>
-              <Link href="/check-in" className="text-[10px] text-[var(--muted)] hover:text-[var(--fg)]">check-in history &rarr;</Link>
-            </div>
-            <div className="pulse-card divide-y divide-[var(--hr)]">
-              {checkIns.slice(0, 5).length ? checkIns.slice(0, 5).map((checkIn) => (
-                <div key={checkIn.id} className="flex items-center justify-between px-3 py-2.5 text-xs">
-                  <div>
-                    <p><span className="mr-2 text-[var(--post-volunteer)]">&#10003;</span>{checkIn.businessName}</p>
-                    {rewards.find((reward) => reward.businessId === checkIn.businessId) && <p className="ml-5 text-[10px] text-[var(--post-volunteer)]">reward available</p>}
-                  </div>
-                  <span className="text-[var(--muted)]">{checkIn.createdAt ? relativeTime(checkIn.createdAt) : checkIn.time}</span>
-                </div>
-              )) : <p className="px-3 py-3 text-xs text-[var(--dim)]">no check-ins yet. <Link href="/check-in" className="underline">check in now</Link></p>}
-            </div>
-          </section>
-
           <section id="rsvps" aria-labelledby="account-rsvps">
-            <div className="mb-2 flex items-baseline justify-between">
-              <h2 id="account-rsvps" className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted)]">your rsvps</h2>
-              <Link href="/events" className="text-[10px] text-[var(--muted)] hover:text-[var(--fg)]">browse events &rarr;</Link>
-            </div>
+            <h2 id="account-rsvps" className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] mb-2">your rsvps</h2>
             <div className="pulse-card divide-y divide-[var(--hr)]">
               {rsvps.length ? rsvps.map((event) => (
                 <Link key={event.id} href={`/events/${event.id}`} className="flex items-center justify-between px-3 py-2.5 text-xs no-underline hover:bg-[var(--surface-muted)] transition-colors">
@@ -140,7 +98,7 @@ export default async function AccountPage() {
                   </div>
                   <span className="text-[var(--muted)] shrink-0 ml-3">{event.date}</span>
                 </Link>
-              )) : <p className="px-3 py-3 text-xs text-[var(--dim)]">no rsvps yet. <Link href="/events" className="underline">find events</Link></p>}
+              )) : <p className="px-3 py-3 text-xs text-[var(--dim)]">no rsvps yet.</p>}
             </div>
           </section>
 
@@ -156,29 +114,6 @@ export default async function AccountPage() {
                   <p className="mt-1 text-[10px] text-[var(--dim)]">{relativeTime(comment.createdAt)}</p>
                 </div>
               )) : <p className="px-3 py-3 text-xs text-[var(--dim)]">no comments yet.</p>}
-            </div>
-          </section>
-
-          <section id="rewards" aria-labelledby="account-rewards">
-            <div className="mb-2 flex items-baseline justify-between">
-              <h2 id="account-rewards" className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted)]">rewards</h2>
-              <Link href="/check-in" className="text-[10px] text-[var(--muted)] hover:text-[var(--fg)]">check-in actions &rarr;</Link>
-            </div>
-            <div className="pulse-card divide-y divide-[var(--hr)]">
-              {rewards.length ? rewards.map((reward) => (
-                <div key={reward.code} className="flex items-center justify-between gap-3 px-3 py-2.5 text-xs">
-                  <div>
-                    <p className="font-bold">{reward.businessName}</p>
-                    <p className="text-[var(--muted)]">{reward.label} · {reward.discount}</p>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <p className="font-bold tracking-wider font-mono text-[11px]">{reward.code}</p>
-                    <p className={reward.redeemed ? "text-[var(--muted)]" : "text-[var(--post-volunteer)]"}>
-                      {reward.redeemed ? "redeemed" : "available"}
-                    </p>
-                  </div>
-                </div>
-              )) : <p className="px-3 py-3 text-xs text-[var(--dim)]">no rewards yet.</p>}
             </div>
           </section>
 

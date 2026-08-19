@@ -56,9 +56,9 @@ export default function PushNotifications() {
   return (
     <button
       onClick={subscribed ? unsubscribe : subscribe}
-      className="text-xs underline text-[var(--muted)] hover:text-[var(--fg)]"
+      className="text-[11px] text-[var(--dim)] hover:text-[var(--fg)] transition-colors"
     >
-      {subscribed ? "disable notifications" : "enable notifications"}
+      {subscribed ? "notifications on" : "enable notifications"}
     </button>
   )
 }

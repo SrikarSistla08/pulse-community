@@ -7,6 +7,11 @@ import { getBusinesses, getPosts, getEvents, relativeTime } from "@/lib/supabase
 import type { Business, Post, Event } from "@/types"
 import L from "leaflet"
 import BusinessImage from "@/components/business-image"
+import {
+  MapPin, CalendarDays, Briefcase, Heart, Search, X,
+  UtensilsCrossed, Coffee, PartyPopper, GraduationCap, Building2,
+  Crosshair, Navigation
+} from "lucide-react"
 import "leaflet/dist/leaflet.css"
 
 type FilterKey =
@@ -20,16 +25,16 @@ type FilterKey =
   | "organization"
   | "discount"
 
-const filters: { key: FilterKey; label: string; icon: string }[] = [
-  { key: "all", label: "All", icon: "◉" },
-  { key: "open", label: "Open Now", icon: "●" },
-  { key: "food", label: "Food", icon: "🍽" },
-  { key: "coffee", label: "Coffee", icon: "☕" },
-  { key: "event", label: "Events", icon: "🎉" },
-  { key: "hiring", label: "Hiring", icon: "💼" },
-  { key: "volunteer", label: "Volunteer", icon: "❤" },
-  { key: "organization", label: "Orgs", icon: "🏛" },
-  { key: "discount", label: "Deals", icon: "🎓" },
+const filters: { key: FilterKey; label: string; icon: React.ReactNode }[] = [
+  { key: "all", label: "All", icon: <Search size={11} strokeWidth={2} /> },
+  { key: "open", label: "Open Now", icon: <span className="inline-block w-2 h-2 rounded-full bg-[var(--post-volunteer)]" /> },
+  { key: "food", label: "Food", icon: <UtensilsCrossed size={11} strokeWidth={2} /> },
+  { key: "coffee", label: "Coffee", icon: <Coffee size={11} strokeWidth={2} /> },
+  { key: "event", label: "Events", icon: <PartyPopper size={11} strokeWidth={2} /> },
+  { key: "hiring", label: "Hiring", icon: <Briefcase size={11} strokeWidth={2} /> },
+  { key: "volunteer", label: "Volunteer", icon: <Heart size={11} strokeWidth={2} /> },
+  { key: "organization", label: "Orgs", icon: <Building2 size={11} strokeWidth={2} /> },
+  { key: "discount", label: "Deals", icon: <GraduationCap size={11} strokeWidth={2} /> },
 ]
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -44,16 +49,13 @@ const CATEGORY_COLORS: Record<string, string> = {
 
 const ARBUTUS_CENTER: [number, number] = [39.2475, -76.6950]
 
-const BUSINESS_POSITIONS: [number, number][] = [
-  [39.2468, -76.6942],
-  [39.2480, -76.6958],
-  [39.2490, -76.6935],
-  [39.2460, -76.6965],
-  [39.2472, -76.6975],
-  [39.2485, -76.6920],
-  [39.2455, -76.6950],
-  [39.2495, -76.6960],
-]
+const BUSINESS_POSITIONS: Record<string, [number, number]> = {
+  "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa": [39.2468, -76.6942], // Fish Head Cantina
+  "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb": [39.2480, -76.6958], // Arbutus Coffee Co
+  "cccccccc-cccc-4ccc-8ccc-cccccccccccc": [39.2490, -76.6935], // Trailside Books
+  "dddddddd-dddd-4ddd-8ddd-dddddddddddd": [39.2460, -76.6965], // Campus Bikes
+  "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee": [39.2472, -76.6975], // Green Bean Market
+}
 
 const MAP_TYPES = [
   { key: "default", label: "Standard" },
@@ -71,6 +73,7 @@ function categoryColor(cat: string): string {
 function isOpenNow(hours: string | null): boolean | null {
   if (!hours) return null
   if (hours.toLowerCase().includes("24 hour")) return true
+  if (hours.toLowerCase().includes("closed")) return false
   const now = new Date()
   const m = now.getHours() * 60 + now.getMinutes()
   const range = hours.match(
@@ -100,13 +103,17 @@ interface Spot {
   subtitle: string
   color: string
   businessId?: string
+  open?: boolean | null
 }
 
 function buildSpots(businesses: Business[], posts: Post[], events: Event[]): Spot[] {
   const spots: Spot[] = []
 
   businesses.forEach((b, i) => {
-    const pos = BUSINESS_POSITIONS[i % BUSINESS_POSITIONS.length]
+    const pos = BUSINESS_POSITIONS[b.id] ?? [
+      ARBUTUS_CENTER[0] + (Math.random() - 0.5) * 0.008,
+      ARBUTUS_CENTER[1] + (Math.random() - 0.5) * 0.008,
+    ]
     spots.push({
       id: `b-${b.id}`,
       type: "business",
@@ -116,18 +123,21 @@ function buildSpots(businesses: Business[], posts: Post[], events: Event[]): Spo
       subtitle: b.category,
       color: categoryColor(b.category),
       businessId: b.id,
+      open: isOpenNow(b.hours),
     })
   })
 
   events.forEach((e, i) => {
     const bizIndex = businesses.findIndex((b) => b.id === e.organizer.id)
     const biz = bizIndex >= 0 ? businesses[bizIndex] : null
-    const pos = biz ? BUSINESS_POSITIONS[bizIndex % BUSINESS_POSITIONS.length] : ARBUTUS_CENTER
+    const pos = biz && BUSINESS_POSITIONS[biz.id]
+      ? BUSINESS_POSITIONS[biz.id]
+      : ARBUTUS_CENTER
     spots.push({
       id: `e-${e.id}`,
       type: "event",
-      lat: pos[0] + 0.0008 * Math.cos(i * 1.3),
-      lng: pos[1] + 0.0008 * Math.sin(i * 1.3),
+      lat: pos[0] + 0.0005 * Math.cos(i * 1.3),
+      lng: pos[1] + 0.0005 * Math.sin(i * 1.3),
       title: e.title,
       subtitle: `${e.date} · ${e.time}`,
       color: "#a03d2e",
@@ -140,12 +150,14 @@ function buildSpots(businesses: Business[], posts: Post[], events: Event[]): Spo
     .forEach((p, i) => {
       const bizIndex = businesses.findIndex((b) => b.id === p.author.id)
       const biz = bizIndex >= 0 ? businesses[bizIndex] : null
-      const pos = biz ? BUSINESS_POSITIONS[bizIndex % BUSINESS_POSITIONS.length] : ARBUTUS_CENTER
+      const pos = biz && BUSINESS_POSITIONS[biz.id]
+        ? BUSINESS_POSITIONS[biz.id]
+        : ARBUTUS_CENTER
       spots.push({
         id: `h-${p.id}`,
         type: "hiring",
-        lat: pos[0] + 0.001 * Math.cos(i * 2.1 + 1),
-        lng: pos[1] + 0.001 * Math.sin(i * 2.1 + 1),
+        lat: pos[0] + 0.0007 * Math.cos(i * 2.1 + 1),
+        lng: pos[1] + 0.0007 * Math.sin(i * 2.1 + 1),
         title: p.title,
         subtitle: `Hiring · ${p.author.name}`,
         color: "#2f6b66",
@@ -158,12 +170,14 @@ function buildSpots(businesses: Business[], posts: Post[], events: Event[]): Spo
     .forEach((p, i) => {
       const bizIndex = businesses.findIndex((b) => b.id === p.author.id)
       const biz = bizIndex >= 0 ? businesses[bizIndex] : null
-      const pos = biz ? BUSINESS_POSITIONS[bizIndex % BUSINESS_POSITIONS.length] : ARBUTUS_CENTER
+      const pos = biz && BUSINESS_POSITIONS[biz.id]
+        ? BUSINESS_POSITIONS[biz.id]
+        : ARBUTUS_CENTER
       spots.push({
         id: `v-${p.id}`,
         type: "volunteer",
-        lat: pos[0] + 0.001 * Math.cos(i * 2.5 + 3),
-        lng: pos[1] + 0.001 * Math.sin(i * 2.5 + 3),
+        lat: pos[0] + 0.0007 * Math.cos(i * 2.5 + 3),
+        lng: pos[1] + 0.0007 * Math.sin(i * 2.5 + 3),
         title: p.title,
         subtitle: `Volunteer · ${p.author.name}`,
         color: "#3f6b3a",
@@ -178,6 +192,52 @@ const TILE_URLS: Record<string, string> = {
   default: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
   light: "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
   dark: "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+}
+
+function spotIcon(spot: Spot, selected: boolean): L.DivIcon {
+  const size = spot.type === "business" ? 36 : 30
+  const openDot = spot.type === "business" && spot.open !== null
+  const dotColor = spot.open ? "#3f6b3a" : spot.open === false ? "#a03d2e" : "#999"
+
+  const iconPaths: Record<string, string> = {
+    business: `<path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 0 1 0-5 2.5 2.5 0 0 1 0 5z" fill="white"/>`,
+    event: `<rect x="3" y="4" width="18" height="18" rx="2" fill="none" stroke="white" stroke-width="1.5"/><line x1="16" y1="2" x2="16" y2="6" stroke="white" stroke-width="1.5"/><line x1="8" y1="2" x2="8" y2="6" stroke="white" stroke-width="1.5"/><line x1="3" y1="10" x2="21" y2="10" stroke="white" stroke-width="1.5"/>`,
+    hiring: `<rect x="2" y="7" width="20" height="14" rx="2" fill="none" stroke="white" stroke-width="1.5"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" fill="none" stroke="white" stroke-width="1.5"/>`,
+    volunteer: `<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" fill="white"/>`,
+  }
+
+  const html = `
+    <div style="position:relative;width:${size}px;height:${size}px;">
+      <div style="
+        width:${size}px;height:${size}px;border-radius:50%;
+        background:${spot.color};
+        border:2.5px solid white;
+        box-shadow:0 2px 8px rgba(0,0,0,0.25);
+        display:flex;align-items:center;justify-content:center;
+        cursor:pointer;transition:transform 0.15s;
+        ${selected ? `transform:scale(1.25);box-shadow:0 0 0 3px ${spot.color}88,0 4px 12px rgba(0,0,0,0.4);` : ""}
+      ">
+        <svg width="${size * 0.5}" height="${size * 0.5}" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          ${iconPaths[spot.type] ?? iconPaths.business}
+        </svg>
+      </div>
+      ${openDot ? `
+        <div style="
+          position:absolute;bottom:-1px;right:-1px;
+          width:10px;height:10px;border-radius:50%;
+          background:${dotColor};border:2px solid white;
+          box-shadow:0 1px 3px rgba(0,0,0,0.3);
+        "></div>
+      ` : ""}
+    </div>
+  `
+
+  return L.divIcon({
+    className: "",
+    html,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+  })
 }
 
 export default function CommunityMap() {
@@ -220,7 +280,7 @@ export default function CommunityMap() {
       if (filter === "all") return true
       const b = s.businessId ? businesses.find((x) => x.id === s.businessId) : null
       switch (filter) {
-        case "open": return b ? isOpenNow(b.hours) === true : s.type === "event"
+        case "open": return s.open === true || s.type === "event"
         case "food": return b?.category === "Restaurant" || b?.category === "Groceries" || false
         case "coffee": return b?.tags?.includes("coffee") ?? false
         case "event": return s.type === "event"
@@ -248,7 +308,6 @@ export default function CommunityMap() {
   const openStatus = selectedBusiness ? isOpenNow(selectedBusiness.hours) : null
   const promo = selectedBusiness ? todayPromotion(posts, selectedBusiness.id) : null
 
-  // Initialize Leaflet map
   useEffect(() => {
     if (!mapRef.current || leafletMap.current) return
 
@@ -275,7 +334,6 @@ export default function CommunityMap() {
     }
   }, [])
 
-  // Update markers when visible spots change
   useEffect(() => {
     const map = leafletMap.current
     if (!map) return
@@ -284,35 +342,18 @@ export default function CommunityMap() {
     markersRef.current = []
 
     visible.forEach((spot) => {
-      const icon = L.divIcon({
-        className: "",
-        html: `<div style="
-          width:32px;height:32px;border-radius:50%;
-          background:${spot.color};
-          border:3px solid white;
-          box-shadow:0 2px 8px rgba(0,0,0,0.3);
-          display:flex;align-items:center;justify-content:center;
-          color:white;font-size:14px;font-weight:bold;
-          cursor:pointer;transition:transform 0.15s;
-          ${selectedId === spot.id ? "transform:scale(1.3);box-shadow:0 0 0 3px " + spot.color + "88,0 4px 12px rgba(0,0,0,0.4);" : ""}
-        ">${spot.type === "business" ? "📍" : spot.type === "event" ? "🎉" : spot.type === "hiring" ? "💼" : "❤"}</div>`,
-        iconSize: [32, 32],
-        iconAnchor: [16, 16],
-      })
-
-      const marker = L.marker([spot.lat, spot.lng], { icon })
+      const marker = L.marker([spot.lat, spot.lng], { icon: spotIcon(spot, selectedId === spot.id) })
         .addTo(map)
         .on("click", () => {
           setSelectedId(spot.id)
           setSidebarOpen(true)
-          map.flyTo([spot.lat, spot.lng], 16, { duration: 0.8 })
+          map.flyTo([spot.lat, spot.lng], 17, { duration: 0.8 })
         })
 
       markersRef.current.push(marker)
     })
   }, [visible, selectedId])
 
-  // User location marker
   useEffect(() => {
     const map = leafletMap.current
     if (!map || !userLoc) return
@@ -330,7 +371,6 @@ export default function CommunityMap() {
     L.marker(userLoc, { icon }).addTo(map)
   }, [userLoc])
 
-  // Switch tile layer
   useEffect(() => {
     const map = leafletMap.current
     if (!map) return
@@ -351,7 +391,7 @@ export default function CommunityMap() {
       (pos) => {
         const loc: [number, number] = [pos.coords.latitude, pos.coords.longitude]
         setUserLoc(loc)
-        leafletMap.current?.flyTo(loc, 15, { duration: 1 })
+        leafletMap.current?.flyTo(loc, 16, { duration: 1 })
       },
       () => {}
     )
@@ -372,7 +412,7 @@ export default function CommunityMap() {
             <button
               key={f.key}
               onClick={() => setFilter(f.key)}
-              className={`shrink-0 border px-2.5 py-1 text-[11px] font-medium transition-all ${
+              className={`shrink-0 flex items-center gap-1 border px-2.5 py-1 text-[11px] font-medium transition-all ${
                 filter === f.key
                   ? "border-[var(--pulse-accent)] bg-[var(--pulse-accent)] text-white"
                   : "border-[var(--hr)] text-[var(--muted)] hover:border-[var(--fg)] hover:text-[var(--fg)]"
@@ -386,10 +426,10 @@ export default function CommunityMap() {
         <div className="flex items-center gap-1 shrink-0">
           <button
             onClick={locateUser}
-            className="border border-[var(--hr)] p-1.5 text-xs hover:border-[var(--fg)] transition-colors"
+            className="border border-[var(--hr)] p-1.5 hover:border-[var(--fg)] transition-colors"
             title="Find me"
           >
-            ◎
+            <Crosshair size={14} strokeWidth={1.75} />
           </button>
           <select
             value={mapStyle}
@@ -405,7 +445,6 @@ export default function CommunityMap() {
 
       {/* Map + Sidebar */}
       <div className="flex-1 relative overflow-hidden border-t border-[var(--hr)]">
-        {/* Leaflet map */}
         <div ref={mapRef} className="absolute inset-0 z-0" />
 
         {/* Legend */}
@@ -413,7 +452,6 @@ export default function CommunityMap() {
           {visible.length} spot{visible.length !== 1 ? "s" : ""} · Arbutus, MD
         </div>
 
-        {/* Spot count badge */}
         {filter !== "all" && (
           <button
             onClick={() => setFilter("all")}
@@ -436,9 +474,9 @@ export default function CommunityMap() {
               </span>
               <button
                 onClick={() => { setSelectedId(null); setSidebarOpen(false) }}
-                className="text-[var(--muted)] hover:text-[var(--fg)] text-lg leading-none transition-colors"
+                className="text-[var(--muted)] hover:text-[var(--fg)] transition-colors"
               >
-                ✕
+                <X size={16} strokeWidth={1.75} />
               </button>
             </div>
 
@@ -456,31 +494,34 @@ export default function CommunityMap() {
                       <h2 className="text-sm font-bold leading-tight">
                         {selectedBusiness.name}
                         {selectedBusiness.verified && (
-                          <span className="ml-1 text-[10px] text-[var(--post-announcement)]">✓ verified</span>
+                          <span className="ml-1 text-[10px] text-[var(--post-announcement)]">verified</span>
                         )}
                       </h2>
                       <p className="text-[11px] text-[var(--muted)]">{selectedBusiness.category}</p>
-                      <p className="text-[11px] text-[var(--muted)]">📍 {selectedBusiness.location}</p>
+                      <p className="flex items-center gap-1 text-[11px] text-[var(--muted)]">
+                        <MapPin size={10} strokeWidth={1.75} /> {selectedBusiness.location}
+                      </p>
                     </div>
                   </div>
 
                   <div className="mt-3 flex items-center gap-3 text-[11px]">
                     {openStatus !== null && (
-                      <span className={openStatus ? "text-[var(--post-volunteer)]" : "text-[var(--post-event)]"}>
-                        {openStatus ? "● open now" : "● closed"}
+                      <span className={`flex items-center gap-1 ${openStatus ? "text-[var(--post-volunteer)]" : "text-[var(--post-event)]"}`}>
+                        <span className={`inline-block w-2 h-2 rounded-full ${openStatus ? "bg-[var(--post-volunteer)]" : "bg-[var(--post-event)]"}`} />
+                        {openStatus ? "open now" : "closed"}
                       </span>
                     )}
                     <span className="text-[var(--dim)]">{selectedBusiness.hours}</span>
                   </div>
 
                   {selectedBusiness.studentDiscount && (
-                    <div className="mt-2 text-[11px] text-[var(--post-hiring)] bg-[var(--post-hiring)]/10 px-2 py-1 inline-block">
-                      🎓 student discount
+                    <div className="mt-2 flex items-center gap-1 text-[11px] text-[var(--post-hiring)] bg-[var(--post-hiring)]/10 px-2 py-1 inline-block">
+                      <GraduationCap size={11} strokeWidth={2} /> student discount
                     </div>
                   )}
 
                   {promo && (
-                    <div className="mt-3 border border-dashed border-[var(--pulse-accent)] bg-[var(--pulse-accent)]/5 p-3 rounded-md">
+                    <div className="mt-3 border border-dashed border-[var(--pulse-accent)] bg-[var(--pulse-accent)]/5 p-3">
                       <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--pulse-accent)]">
                         today&apos;s deal
                       </div>
@@ -499,14 +540,12 @@ export default function CommunityMap() {
                           <Link
                             key={e.id}
                             href={`/events/${e.id}`}
-                            className="block border border-[var(--hr)] p-2.5 hover:border-[var(--fg)] transition-colors no-underline"
+                            className="flex items-center gap-2 border border-[var(--hr)] p-2.5 hover:border-[var(--fg)] transition-colors no-underline"
                           >
-                            <div className="flex items-center gap-2">
-                              <span className="text-base">🎉</span>
-                              <div>
-                                <span className="text-xs font-bold text-[var(--fg)]">{e.title}</span>
-                                <span className="text-[11px] text-[var(--muted)] block">{e.date} · {e.time}</span>
-                              </div>
+                            <CalendarDays size={14} strokeWidth={1.75} className="shrink-0 text-[var(--muted)]" />
+                            <div>
+                              <span className="text-xs font-bold text-[var(--fg)] block">{e.title}</span>
+                              <span className="text-[11px] text-[var(--muted)]">{e.date} · {e.time}</span>
                             </div>
                           </Link>
                         ))}
@@ -537,22 +576,22 @@ export default function CommunityMap() {
                   <div className="mt-5 space-y-2">
                     <Link
                       href={`/check-in?business=${selectedBusiness.id}`}
-                      className="block w-full bg-[var(--pulse-accent)] text-white px-3 py-2.5 text-xs text-center font-medium no-underline hover:opacity-90 transition-opacity rounded-md"
+                      className="flex items-center justify-center gap-1.5 w-full bg-[var(--pulse-accent)] text-white px-3 py-2.5 text-xs font-medium no-underline hover:opacity-90 transition-opacity"
                     >
-                      📱 QR Check-in
+                      <Navigation size={12} strokeWidth={2} /> Check in
                     </Link>
                     <div className="grid grid-cols-2 gap-2">
                       <a
                         href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedBusiness.location)}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="border border-[var(--hr)] px-3 py-2 text-xs text-center text-[var(--fg)] no-underline hover:bg-[var(--fg)] hover:text-[var(--bg)] transition-colors rounded-md"
+                        className="flex items-center justify-center gap-1 border border-[var(--hr)] px-3 py-2 text-xs text-[var(--fg)] no-underline hover:bg-[var(--fg)] hover:text-[var(--bg)] transition-colors"
                       >
-                        directions
+                        <MapPin size={11} strokeWidth={1.75} /> directions
                       </a>
                       <Link
                         href={`/businesses/${selectedBusiness.id}`}
-                        className="border border-[var(--hr)] px-3 py-2 text-xs text-center text-[var(--fg)] no-underline hover:bg-[var(--fg)] hover:text-[var(--bg)] transition-colors rounded-md"
+                        className="flex items-center justify-center gap-1 border border-[var(--hr)] px-3 py-2 text-xs text-[var(--fg)] no-underline hover:bg-[var(--fg)] hover:text-[var(--bg)] transition-colors"
                       >
                         view profile
                       </Link>
@@ -561,7 +600,6 @@ export default function CommunityMap() {
                 </>
               ) : (
                 <div>
-                  <div className="text-2xl mb-2">{selected.type === "event" ? "🎉" : selected.type === "hiring" ? "💼" : "❤"}</div>
                   <h2 className="text-sm font-bold leading-tight">{selected.title}</h2>
                   <p className="text-[11px] text-[var(--muted)] mt-1">{selected.subtitle}</p>
                   <p className="text-xs text-[var(--dim)] mt-3">
@@ -572,7 +610,7 @@ export default function CommunityMap() {
                   {selected?.businessId && (
                     <Link
                       href={`/businesses/${selected.businessId}`}
-                      className="mt-3 block border border-[var(--hr)] px-3 py-2 text-xs text-center text-[var(--fg)] no-underline hover:bg-[var(--fg)] hover:text-[var(--bg)] transition-colors rounded-md"
+                      className="mt-3 block border border-[var(--hr)] px-3 py-2 text-xs text-center text-[var(--fg)] no-underline hover:bg-[var(--fg)] hover:text-[var(--bg)] transition-colors"
                     >
                       view business
                     </Link>

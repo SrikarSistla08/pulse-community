@@ -5,14 +5,12 @@ import { usePathname, useRouter } from "next/navigation"
 import { useEffect, useRef, useState } from "react"
 import { signOut } from "@/lib/auth-client"
 import { useSupabase, useCurrentUser } from "@/lib/supabase/hooks"
+import { Search, Bell, Menu, X } from "lucide-react"
 
 const links = [
   { href: "/", label: "Feed" },
-  { href: "/businesses", label: "Businesses" },
-  { href: "/events", label: "Events" },
   { href: "/map", label: "Map" },
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/check-in", label: "Check-In" },
+  { href: "/events", label: "Events" },
 ]
 
 interface Notification {
@@ -31,11 +29,10 @@ export default function Navbar() {
   const user = useCurrentUser()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [notifsOpen, setNotifsOpen] = useState(false)
-  const [accountOpen, setAccountOpen] = useState(false)
   const [query, setQuery] = useState("")
   const [notifications, setNotifications] = useState<Notification[]>([])
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const notifsRef = useRef<HTMLDivElement>(null)
-  const accountRef = useRef<HTMLDivElement>(null)
 
   function timeLabel(iso: string): string {
     const diff = Date.now() - new Date(iso).getTime()
@@ -79,19 +76,27 @@ export default function Navbar() {
   }, [supabase, user])
 
   useEffect(() => {
+    if (!supabase || !user) return
+    let active = true
+    supabase
+      .from("profiles")
+      .select("avatar_url")
+      .eq("id", user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (active && data?.avatar_url) setAvatarUrl(data.avatar_url)
+      })
+    return () => { active = false }
+  }, [supabase, user])
+
+  useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (notifsRef.current && !notifsRef.current.contains(e.target as Node)) {
         setNotifsOpen(false)
       }
-      if (accountRef.current && !accountRef.current.contains(e.target as Node)) {
-        setAccountOpen(false)
-      }
     }
     function handleEscape(e: KeyboardEvent) {
-      if (e.key === "Escape") {
-        setNotifsOpen(false)
-        setAccountOpen(false)
-      }
+      if (e.key === "Escape") setNotifsOpen(false)
     }
     document.addEventListener("mousedown", handleClickOutside)
     document.addEventListener("keydown", handleEscape)
@@ -103,7 +108,7 @@ export default function Navbar() {
 
   function submitSearch(e: React.FormEvent) {
     e.preventDefault()
-    router.push(`/search?q=${encodeURIComponent(query)}`)
+    if (query.trim()) router.push(`/search?q=${encodeURIComponent(query)}`)
   }
 
   async function handleLogout() {
@@ -118,68 +123,57 @@ export default function Navbar() {
       Skip to content
     </a>
     <header className="sticky top-0 z-50 border-b border-[var(--hr)] bg-[var(--bg)]/95 backdrop-blur-sm">
-      <div className="mx-auto flex max-w-7xl items-center gap-5 px-4 py-3 sm:px-6 lg:px-8">
+      <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-2.5 sm:px-6 lg:px-8">
         <Link href="/" className="shrink-0 no-underline hover:color-unset group">
-          <div className="text-xl font-bold tracking-[0.18em] leading-none group-hover:text-[var(--pulse-accent)] transition-colors">
+          <div className="text-lg font-bold tracking-[0.18em] leading-none group-hover:text-[var(--pulse-accent)] transition-colors">
             PULSE
           </div>
-          <div className="text-[9px] text-[var(--dim)] tracking-[0.08em] uppercase mt-0.5">
-            heartbeat of your community
+          <div className="text-[9px] text-[var(--pulse-accent)] tracking-[0.06em] mt-0.5">
+            Heartbeat of y<em className="font-semibold" style={{ fontStyle: "italic" }}>our</em> community
           </div>
         </Link>
 
-        <nav className="hidden items-center gap-0.5 overflow-x-auto text-sm no-scrollbar sm:flex">
+        <nav className="hidden items-center gap-0.5 text-[13px] no-scrollbar sm:flex">
           {links.map((link) => {
             const isActive = pathname === link.href
             return (
-              <span key={link.href} className="flex items-center whitespace-nowrap">
-                <Link
-                  href={link.href}
-                  className={`rounded-md px-2.5 py-1.5 leading-none no-underline transition-colors ${
-                    isActive
-                      ? "text-[var(--pulse-accent)] font-semibold"
-                      : "text-[var(--muted)] hover:text-[var(--fg)] hover:bg-[var(--surface-muted)]"
-                  }`}
-                >
-                  {link.label}
-                </Link>
-              </span>
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`px-2.5 py-1.5 leading-none no-underline transition-colors ${
+                  isActive
+                    ? "text-[var(--pulse-accent)] font-semibold"
+                    : "text-[var(--muted)] hover:text-[var(--fg)]"
+                }`}
+              >
+                {link.label}
+              </Link>
             )
           })}
         </nav>
 
-        <div className="flex items-center gap-2 text-xs sm:text-sm ml-auto shrink-0">
+        <div className="flex items-center gap-1.5 ml-auto shrink-0">
           <form onSubmit={submitSearch} className="hidden items-center lg:flex" role="search">
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="search…"
               aria-label="search"
-              className="w-40 border border-[var(--hr)] bg-[var(--surface)] px-2.5 py-1.5 text-xs focus:outline-none focus:border-[var(--fg)]"
+              className="w-36 h-7 border border-[var(--hr)] bg-[var(--surface)] px-2.5 text-[13px] focus:outline-none focus:border-[var(--fg)]"
             />
-            <button
-              type="submit"
-              aria-label="submit search"
-              className="border border-[var(--fg)] px-2.5 py-1.5 hover:bg-[var(--fg)] hover:text-[var(--bg)]"
-            >
-              &rarr;
-            </button>
           </form>
 
-          <Link href="/search" className="lg:hidden text-[var(--muted)] hover:text-[var(--fg)] px-1.5" title="search">
-            &#128269;
+          <Link href="/search" className="lg:hidden text-[var(--muted)] hover:text-[var(--fg)] p-1.5" title="search">
+            <Search size={16} strokeWidth={1.75} />
           </Link>
 
           <div className="relative" ref={notifsRef}>
             <button
-              onClick={() => { setNotifsOpen(!notifsOpen); setAccountOpen(false) }}
-              className="text-[var(--muted)] hover:text-[var(--fg)] px-1.5 relative"
+              onClick={() => setNotifsOpen(!notifsOpen)}
+              className="text-[var(--muted)] hover:text-[var(--fg)] p-1.5 relative"
               aria-label="notifications"
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-              </svg>
+              <Bell size={16} strokeWidth={1.75} />
               {notifications.some(() => true) && (
                 <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-[var(--pulse-accent)]" />
               )}
@@ -190,9 +184,7 @@ export default function Navbar() {
                   notifications
                 </div>
                 {notifications.length === 0 ? (
-                  <div className="px-4 py-3 text-xs text-[var(--dim)]">
-                    no notifications yet
-                  </div>
+                  <div className="px-4 py-3 text-xs text-[var(--dim)]">no notifications yet</div>
                 ) : (
                   notifications.map((n) => (
                     <div key={n.id} className="px-4 py-2 text-xs hover:bg-[var(--surface-muted)] cursor-pointer transition-colors">
@@ -206,32 +198,23 @@ export default function Navbar() {
             )}
           </div>
 
-          <div className="relative" ref={accountRef}>
-            <button
-              onClick={() => { setAccountOpen(!accountOpen); setNotifsOpen(false) }}
-              className="text-[var(--muted)] hover:text-[var(--fg)] px-1.5"
-              aria-label="open account menu"
-              aria-expanded={accountOpen}
-            >
-              {(user?.user_metadata?.full_name || user?.email || "?").slice(0, 2).toUpperCase()}
-            </button>
-            {accountOpen && (
-              <div className="absolute right-0 top-full z-50 mt-2 w-44 border border-[var(--hr)] bg-[var(--bg)] py-1 text-xs shadow-lg">
-                <Link href="/account" onClick={() => setAccountOpen(false)} className="block px-4 py-2 no-underline hover:bg-[var(--surface-muted)] transition-colors">account</Link>
-                <Link href="/account#saved" onClick={() => setAccountOpen(false)} className="block px-4 py-2 no-underline hover:bg-[var(--surface-muted)] transition-colors">saved</Link>
-                <Link href="/check-in" onClick={() => setAccountOpen(false)} className="block px-4 py-2 no-underline hover:bg-[var(--surface-muted)] transition-colors">check-ins</Link>
-                <Link href="/account#rewards" onClick={() => setAccountOpen(false)} className="block px-4 py-2 no-underline hover:bg-[var(--surface-muted)] transition-colors">rewards</Link>
-                <Link href="/account#settings" onClick={() => setAccountOpen(false)} className="block px-4 py-2 no-underline hover:bg-[var(--surface-muted)] transition-colors">settings</Link>
-                <div className="border-t border-[var(--hr)] mt-1 pt-1">
-                  <button onClick={handleLogout} className="block w-full px-4 py-2 text-left hover:bg-[var(--surface-muted)] transition-colors">sign out</button>
-                </div>
-              </div>
+          <Link
+            href="/account"
+            className="w-7 h-7 flex items-center justify-center overflow-hidden text-[11px] font-bold text-[var(--muted)] hover:ring-2 hover:ring-[var(--pulse-accent)] no-underline transition-all"
+            style={{ borderRadius: "var(--radius-sm)" }}
+            title="account"
+          >
+            {avatarUrl ? (
+              <img src={avatarUrl} alt="profile" className="w-full h-full object-cover border border-[var(--hr)]" />
+            ) : (
+              (user?.user_metadata?.full_name || user?.email || "?").slice(0, 2).toUpperCase()
             )}
-          </div>
+          </Link>
 
           <Link
             href="/create/post"
-            className="pulse-button-accent text-[10px] font-bold px-3 py-1.5 hidden sm:inline-flex items-center"
+            className="w-7 h-7 flex items-center justify-center text-[13px] font-medium text-[var(--muted)] border border-[var(--hr)] hover:border-[var(--fg)] hover:text-[var(--fg)] no-underline transition-colors hidden sm:flex"
+            style={{ borderRadius: "var(--radius-sm)" }}
             title="create post"
           >
             +
@@ -239,18 +222,22 @@ export default function Navbar() {
 
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
-            className="sm:hidden border border-[var(--fg)] px-2 py-1 text-xs"
+            className="sm:hidden text-[var(--muted)] hover:text-[var(--fg)] p-1.5"
             aria-label={mobileOpen ? "close menu" : "open menu"}
             aria-expanded={mobileOpen}
             aria-controls="mobile-nav"
           >
-            {mobileOpen ? "[ x ]" : "[ = ]"}
+            {mobileOpen ? (
+              <X size={18} strokeWidth={1.75} />
+            ) : (
+              <Menu size={18} strokeWidth={1.75} />
+            )}
           </button>
         </div>
       </div>
 
       {mobileOpen && (
-        <nav id="mobile-nav" className="sm:hidden border-t border-[var(--hr)] px-4 py-4 space-y-1 bg-[var(--bg)]">
+        <nav id="mobile-nav" className="sm:hidden border-t border-[var(--hr)] px-4 py-3 space-y-0.5 bg-[var(--bg)]">
           {links.map((link) => {
             const isActive = pathname === link.href
             return (
@@ -258,36 +245,21 @@ export default function Navbar() {
                 key={link.href}
                 href={link.href}
                 onClick={() => setMobileOpen(false)}
-                className={`block text-sm py-2 no-underline ${
-                  isActive ? "font-bold text-[var(--fg)]" : "text-[var(--muted)]"
-                }`}
+                className={`block text-sm py-2 no-underline ${isActive ? "font-bold text-[var(--fg)]" : "text-[var(--muted)]"}`}
               >
-                &gt; {link.label}
+                {link.label}
               </Link>
             )
           })}
-          <hr className="my-3" />
-          <Link
-            href="/create/post"
-            onClick={() => setMobileOpen(false)}
-            className="block text-sm py-2 text-[var(--muted)] no-underline"
-          >
-            &gt; create post
-          </Link>
-          <Link
-            href="/create/event"
-            onClick={() => setMobileOpen(false)}
-            className="block text-sm py-2 text-[var(--muted)] no-underline"
-          >
-            &gt; create event
-          </Link>
-          <Link
-            href="/account"
-            onClick={() => setMobileOpen(false)}
-            className="block text-sm py-2 text-[var(--muted)] no-underline"
-          >
-            &gt; account
-          </Link>
+          <div className="border-t border-[var(--hr)] mt-2 pt-2 space-y-0.5">
+            <Link href="/businesses" onClick={() => setMobileOpen(false)} className="block text-sm py-2 text-[var(--muted)] no-underline">Businesses</Link>
+            <Link href="/check-in" onClick={() => setMobileOpen(false)} className="block text-sm py-2 text-[var(--muted)] no-underline">Check-In</Link>
+            <Link href="/dashboard" onClick={() => setMobileOpen(false)} className="block text-sm py-2 text-[var(--muted)] no-underline">Dashboard</Link>
+            <Link href="/create/post" onClick={() => setMobileOpen(false)} className="block text-sm py-2 text-[var(--muted)] no-underline">Create Post</Link>
+            <Link href="/create/event" onClick={() => setMobileOpen(false)} className="block text-sm py-2 text-[var(--muted)] no-underline">Create Event</Link>
+            <Link href="/account" onClick={() => setMobileOpen(false)} className="block text-sm py-2 text-[var(--muted)] no-underline">Account</Link>
+            <button onClick={handleLogout} className="block text-sm py-2 text-[var(--muted)] text-left w-full">Sign Out</button>
+          </div>
         </nav>
       )}
     </header>

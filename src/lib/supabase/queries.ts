@@ -18,6 +18,7 @@ export interface BusinessRow {
   tags: string[] | null
   verified: boolean | null
   student_discount: boolean | null
+  qr_token: string | null
 }
 
 export interface PostRow {
@@ -148,6 +149,7 @@ function mapBusiness(row: BusinessRow, followers: number, isFollowing: boolean):
     studentDiscount: row.student_discount ?? false,
     followers,
     isFollowing,
+    qrToken: row.qr_token ?? undefined,
   }
 }
 
@@ -308,7 +310,7 @@ export async function getBusinesses(
     .select("*")
     .order("name", { ascending: true })
   if (error) {
-    console.error("getBusinesses failed:", error)
+    console.warn("getBusinesses:", error.message)
     return []
   }
   const rows = (data ?? []) as BusinessRow[]
@@ -427,7 +429,7 @@ export async function getPosts(
     )
     .order("created_at", { ascending: false })
   if (error) {
-    console.error("getPosts failed:", error)
+    console.warn("getPosts:", error.message)
     return []
   }
   const rows = (data ?? []) as PostRow[]
@@ -495,7 +497,7 @@ export async function getEvents(
     )
     .order("starts_at", { ascending: true })
   if (error) {
-    console.error("getEvents failed:", error)
+    console.warn("getEvents:", error.message)
     return []
   }
   const rows = (data ?? []) as EventRow[]
@@ -550,7 +552,7 @@ export async function getUpcomingEvents(
     .gte("starts_at", now.toISOString())
     .order("starts_at", { ascending: true })
   if (error) {
-    console.error("getUpcomingEvents failed:", error)
+    console.warn("getUpcomingEvents:", error.message)
     return []
   }
   const rows = (data ?? []) as EventRow[]
@@ -607,7 +609,7 @@ export async function getBusinessCheckIns(
     .eq("user_id", userId)
     .order("created_at", { ascending: false })
   if (error) {
-    console.error("getBusinessCheckIns failed:", error)
+    console.warn("getBusinessCheckIns:", error.message)
     return []
   }
   return (data ?? []).map((row) => {
@@ -633,7 +635,7 @@ export async function getRewardsForUser(
     .eq("user_id", userId)
     .order("created_at", { ascending: false })
   if (error) {
-    console.error("getRewardsForUser failed:", error)
+    console.warn("getRewardsForUser:", error.message ?? "table may not exist")
     return []
   }
   return (data ?? []).map((row) => {
@@ -793,11 +795,14 @@ export interface PostComment {
   userName: string
   content: string
   createdAt: string
+  likes: number
+  likedByUser: boolean
 }
 
 export async function getComments(
   supabase: SupabaseClient,
-  postId: string
+  postId: string,
+  userId?: string
 ): Promise<PostComment[]> {
   const { data, error } = await supabase
     .from("post_comments")
@@ -805,6 +810,24 @@ export async function getComments(
     .eq("post_id", postId)
     .order("created_at", { ascending: true })
   if (error) return []
+
+  const commentIds = (data ?? []).map((r) => r.id)
+  let likedSet = new Set<string>()
+  let likeCounts: Record<string, number> = {}
+
+  if (commentIds.length > 0) {
+    const [likesRes, userLikesRes] = await Promise.all([
+      supabase.from("comment_likes").select("comment_id").in("comment_id", commentIds),
+      userId ? supabase.from("comment_likes").select("comment_id").eq("user_id", userId).in("comment_id", commentIds) : Promise.resolve({ data: [] }),
+    ])
+    for (const row of likesRes.data ?? []) {
+      likeCounts[row.comment_id] = (likeCounts[row.comment_id] ?? 0) + 1
+    }
+    for (const row of userLikesRes.data ?? []) {
+      likedSet.add(row.comment_id)
+    }
+  }
+
   return (data ?? []).map((row) => {
     const profile = Array.isArray(row.profiles) ? row.profiles[0] : row.profiles
     return {
@@ -814,8 +837,31 @@ export async function getComments(
       userName: (profile as { full_name: string | null } | null)?.full_name?.trim() || "Member",
       content: row.content,
       createdAt: row.created_at,
+      likes: likeCounts[row.id] ?? 0,
+      likedByUser: likedSet.has(row.id),
     }
   })
+}
+
+export async function toggleCommentLike(
+  supabase: SupabaseClient,
+  userId: string,
+  commentId: string,
+  liked: boolean
+): Promise<boolean> {
+  if (liked) {
+    const { error } = await supabase
+      .from("comment_likes")
+      .delete()
+      .eq("user_id", userId)
+      .eq("comment_id", commentId)
+    return !error
+  } else {
+    const { error } = await supabase
+      .from("comment_likes")
+      .insert({ user_id: userId, comment_id: commentId })
+    return !error
+  }
 }
 
 export async function addComment(
@@ -838,6 +884,8 @@ export async function addComment(
     userName: "You",
     content: data.content,
     createdAt: data.created_at,
+    likes: 0,
+    likedByUser: false,
   }
 }
 
@@ -964,6 +1012,8 @@ export async function getUserComments(
       userName: "You",
       content: row.content,
       createdAt: row.created_at,
+      likes: 0,
+      likedByUser: false,
       postTitle: (post as { title: string } | null)?.title ?? "Untitled",
     }
   })

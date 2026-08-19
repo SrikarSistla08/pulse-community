@@ -8,19 +8,19 @@ import { relativeTime } from "@/lib/supabase/queries"
 import { useToast } from "@/components/toast"
 import BusinessImage from "@/components/business-image"
 import CommentThread from "@/components/comment-thread"
+import { Heart, MessageCircle, Share2, Bookmark } from "lucide-react"
 import type { Post } from "@/types"
 
-const typeStyle: Record<Post["type"], { label: string; color: string }> = {
-  announcement: { label: "announcement", color: "var(--post-announcement)" },
-  event: { label: "event", color: "var(--post-event)" },
-  promotion: { label: "promotion", color: "var(--post-promotion)" },
-  update: { label: "community update", color: "var(--post-update)" },
-  volunteer: { label: "volunteer", color: "var(--post-volunteer)" },
-  hiring: { label: "hiring", color: "var(--post-hiring)" },
+const typeColor: Record<Post["type"], string> = {
+  announcement: "var(--post-announcement)",
+  event: "var(--post-event)",
+  promotion: "var(--post-promotion)",
+  update: "var(--post-update)",
+  volunteer: "var(--post-volunteer)",
+  hiring: "var(--post-hiring)",
 }
 
 export default function PostCard({ post }: { post: Post }) {
-  const t = typeStyle[post.type]
   const router = useRouter()
   const supabase = useSupabase()
   const user = useCurrentUser()
@@ -30,23 +30,14 @@ export default function PostCard({ post }: { post: Post }) {
   const [saved, setSaved] = useState(false)
   const [saving, setSaving] = useState(false)
   const [canEdit, setCanEdit] = useState(false)
+  const [commentsOpen, setCommentsOpen] = useState(false)
 
   useEffect(() => {
     if (!supabase || !user) return
     let active = true
     Promise.all([
-      supabase
-        .from("saved_posts")
-        .select("id")
-        .eq("user_id", user.id)
-        .eq("post_id", post.id)
-        .maybeSingle(),
-      supabase
-        .from("post_likes")
-        .select("id")
-        .eq("user_id", user.id)
-        .eq("post_id", post.id)
-        .maybeSingle(),
+      supabase.from("saved_posts").select("id").eq("user_id", user.id).eq("post_id", post.id).maybeSingle(),
+      supabase.from("post_likes").select("id").eq("user_id", user.id).eq("post_id", post.id).maybeSingle(),
     ]).then(([savedRes, likeRes]) => {
       if (!active) return
       setSaved(Boolean(savedRes.data))
@@ -58,11 +49,7 @@ export default function PostCard({ post }: { post: Post }) {
   useEffect(() => {
     if (!supabase || !user || !post.businessId) return
     supabase
-      .from("businesses")
-      .select("id")
-      .eq("id", post.businessId)
-      .eq("owner_id", user.id)
-      .maybeSingle()
+      .from("businesses").select("id").eq("id", post.businessId).eq("owner_id", user.id).maybeSingle()
       .then(({ data }) => setCanEdit(Boolean(data)))
   }, [supabase, user, post.businessId])
 
@@ -76,23 +63,11 @@ export default function PostCard({ post }: { post: Post }) {
     setLiked(!prevLiked)
     setLikes(prevLiked ? prevCount - 1 : prevCount + 1)
     if (prevLiked) {
-      const { error } = await supabase
-        .from("post_likes")
-        .delete()
-        .eq("user_id", user.id)
-        .eq("post_id", post.id)
-      if (error) {
-        setLiked(prevLiked)
-        setLikes(prevCount)
-      }
+      const { error } = await supabase.from("post_likes").delete().eq("user_id", user.id).eq("post_id", post.id)
+      if (error) { setLiked(prevLiked); setLikes(prevCount) }
     } else {
-      const { error } = await supabase
-        .from("post_likes")
-        .insert({ user_id: user.id, post_id: post.id })
-      if (error) {
-        setLiked(prevLiked)
-        setLikes(prevCount)
-      }
+      const { error } = await supabase.from("post_likes").insert({ user_id: user.id, post_id: post.id })
+      if (error) { setLiked(prevLiked); setLikes(prevCount) }
     }
   }
 
@@ -120,74 +95,74 @@ export default function PostCard({ post }: { post: Post }) {
   }
 
   return (
-    <article
-      className="pulse-card border-l-[3px] p-4 sm:p-5"
-      style={{ borderLeftColor: t.color }}
-    >
-      <div className="flex items-center gap-2 mb-2 flex-wrap">
+    <article className="py-4 border-b border-[var(--hr)] last:border-0">
+      {/* Author row */}
+      <div className="flex items-center gap-2 mb-2">
+        <BusinessImage
+          name={post.author.name}
+          category={post.author.category}
+          logoUrl={post.author.logo}
+          className="h-7 w-7 rounded-full object-cover duotone shrink-0"
+        />
+        <span className="text-[13px] font-semibold">{post.author.name}</span>
+        <span className="text-[11px] text-[var(--dim)]">{relativeTime(post.createdAt)}</span>
         <span
-          className="rounded-sm border px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider"
-          style={{ color: t.color, borderColor: t.color }}
+          className="ml-auto text-[9px] font-medium uppercase tracking-wider"
+          style={{ color: typeColor[post.type] }}
         >
-          {t.label}
+          {post.type === "update" ? "update" : post.type}
         </span>
-        <BusinessImage name={post.author.name} category={post.author.category} logoUrl={post.author.logo} className="h-6 w-6 border border-[var(--fg)] object-cover duotone" />
-        <div className="text-xs text-[var(--muted)]">
-          <span className="font-bold text-[var(--fg)]">{post.author.name}</span>
-          {" — "}
-          <span>{relativeTime(post.createdAt)}</span>
-        </div>
       </div>
 
-        <h2 className="mb-1 text-lg font-bold leading-snug tracking-tight">{post.title}</h2>
-
-      <p className="mb-3 max-w-2xl text-[15px] leading-relaxed text-[var(--fg)] whitespace-pre-line">
-        {post.content}
-      </p>
+      {/* Title + content */}
+      <h2 className="text-[15px] font-bold leading-snug tracking-tight mb-1">{post.title}</h2>
+      <p className="text-[13px] leading-relaxed text-[var(--fg)]/80 whitespace-pre-line mb-2">{post.content}</p>
 
       {post.image && (
-        <div className="mb-2 inline-block max-w-full duotone">
-          <img
-            src={post.image}
-            alt=""
-            className="block max-w-full h-auto object-cover border border-[var(--hr)]"
-            style={{ maxHeight: 220 }}
-          />
+        <div className="mb-2 overflow-hidden">
+          <img src={post.image} alt="" className="block w-full max-h-56 object-cover" />
         </div>
       )}
 
-      <div className="flex items-center gap-3 sm:gap-4 text-sm text-[var(--muted)] mt-2 flex-wrap">
+      {/* Compact action bar */}
+      <div className="flex items-center gap-3 text-[var(--muted)]">
         <button
           onClick={toggleLike}
-          className={`hover:underline ${liked ? "text-[var(--post-event)]" : ""}`}
+          className={`flex items-center gap-1 text-[11px] transition-colors hover:text-[var(--post-event)] ${liked ? "text-[var(--post-event)]" : ""}`}
         >
-          &#9829; {likes}
+          <Heart size={12} strokeWidth={1.5} fill={liked ? "currentColor" : "none"} />
+          {likes > 0 && likes}
         </button>
-        <button onClick={() => {}} className="hover:underline">
-          &#9993; {post.comments}
+        <button
+          onClick={() => setCommentsOpen(!commentsOpen)}
+          className={`flex items-center gap-1 text-[11px] transition-colors hover:text-[var(--fg)] ${commentsOpen ? "text-[var(--fg)]" : "text-[var(--muted)]"}`}
+        >
+          <MessageCircle size={12} strokeWidth={1.5} fill={commentsOpen ? "currentColor" : "none"} />
+          {post.comments > 0 && post.comments}
         </button>
-        <button onClick={handleShare} className="hover:underline">
-          &#8627; share
+        <button onClick={handleShare} className="text-[11px] transition-colors hover:text-[var(--fg)]">
+          <Share2 size={12} strokeWidth={1.5} />
         </button>
         <button
           onClick={toggleSaved}
           disabled={saving}
-          className="hover:underline disabled:opacity-50"
+          className="transition-colors hover:text-[var(--fg)] disabled:opacity-50"
         >
-          {saved ? "* saved" : "* save"}
+          <Bookmark size={12} strokeWidth={1.5} fill={saved ? "currentColor" : "none"} />
         </button>
         {post.eventId && (
-          <Link href={`/events/${post.eventId}`} className="hover:underline">
-            &rarr; event details
+          <Link href={`/events/${post.eventId}`} className="text-[11px] text-[var(--dim)] hover:text-[var(--fg)] ml-auto">
+            event &rarr;
           </Link>
         )}
         {canEdit && (
-          <Link href={`/posts/${post.id}/edit`} className="hover:underline">
+          <Link href={`/posts/${post.id}/edit`} className="text-[11px] text-[var(--dim)] hover:text-[var(--fg)]">
             edit
           </Link>
         )}
       </div>
-      <CommentThread postId={post.id} />
+
+      <CommentThread postId={post.id} open={commentsOpen} />
     </article>
   )
 }

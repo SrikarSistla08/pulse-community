@@ -26,6 +26,7 @@ export interface Business {
   studentDiscount?: boolean
   followers: number
   isFollowing: boolean
+  qrToken?: string
 }
 
 import type { PostType } from "@/lib/posts"

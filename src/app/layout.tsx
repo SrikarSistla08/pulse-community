@@ -41,25 +41,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ToastProvider>
           <Navbar />
           <main className="flex-1">{children}</main>
-          <footer className="border-t border-[var(--hr)] py-8 mt-auto">
-            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex flex-col items-center gap-3 text-xs text-[var(--muted)]">
-              <div className="flex flex-col sm:flex-row items-center justify-between w-full gap-3">
-                <div>
-                  <span className="font-bold text-[var(--fg)] tracking-wider">PULSE</span>
-                  <span className="mx-1.5 text-[var(--dim)]">·</span>
-                  <span>heartbeat of your community</span>
-                </div>
-                <div className="text-[var(--dim)]">
-                  &copy; {new Date().getFullYear()} Pulse
-                </div>
-              </div>
-              <div className="text-[11px] text-[var(--dim)] pt-2 border-t border-[var(--hr)] w-full text-center">
-                A happy product by <a href="https://the-valley-inc.vercel.app/" target="_blank" rel="noopener noreferrer" className="underline hover:text-[var(--fg)] transition-colors">TheValleyInc.</a>
-              </div>
+          <footer className="border-t border-[var(--hr)] py-5 mt-auto">
+            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] text-[var(--dim)]">
+              <span className="font-bold text-[var(--fg)] tracking-wider">PULSE</span>
+              <span>&copy; {new Date().getFullYear()}</span>
+              <a href="https://the-valley-inc.vercel.app/" target="_blank" rel="noopener noreferrer" className="hover:text-[var(--fg)] transition-colors">TheValleyInc</a>
+              <span className="text-[var(--hr)]">·</span>
+              <PushNotifications />
             </div>
           </footer>
           <ServiceWorker />
-          <PushNotifications />
         </ToastProvider>
       </body>
     </html>

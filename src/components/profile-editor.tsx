@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation"
 import { useState } from "react"
+import ImageUpload from "@/components/image-upload"
 
 interface ProfileEditorProps {
   fullName: string
@@ -78,9 +79,12 @@ export default function ProfileEditor({ fullName, avatarUrl, email }: ProfileEdi
             <input id="account-full-name" value={name} onChange={(e) => setName(e.target.value)} className="w-full text-sm" />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-[var(--muted)]" htmlFor="account-avatar-url">avatar URL (optional)</label>
-            <input id="account-avatar-url" type="url" value={avatar} onChange={(e) => { setAvatar(e.target.value); setAvatarFailed(false) }} placeholder="https://example.com/photo.jpg" className="w-full text-sm" />
-            <p className="text-[10px] text-[var(--dim)] mt-1">Paste a direct image URL (ends in .jpg, .png, etc.)</p>
+            <ImageUpload
+              value={avatar}
+              onChange={(url) => { setAvatar(url); setAvatarFailed(false) }}
+              variant="avatar"
+              label="profile picture"
+            />
           </div>
           <p className="text-[11px] text-[var(--dim)]">Email and role are managed by authentication and admin controls.</p>
           <button onClick={save} disabled={saving} className="border border-[var(--fg)] px-3 py-2 text-xs hover:bg-[var(--fg)] hover:text-[var(--bg)] disabled:opacity-50">

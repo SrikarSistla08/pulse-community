@@ -8,6 +8,7 @@ import GoogleButton from "@/components/auth/google-button"
 import RoleSelect from "@/components/auth/role-select"
 import { isSupabaseConfigured, signUpWithPassword } from "@/lib/auth-client"
 import { homeForRole, type Role } from "@/lib/auth"
+import { MailCheck } from "lucide-react"
 import { resolveRoleHome } from "@/lib/auth-client"
 
 export default function SignupForm() {
@@ -79,7 +80,7 @@ export default function SignupForm() {
     return (
       <AuthShell title="PULSE" subtitle="community signup">
         <div className="border border-[var(--hr)] p-8 text-center">
-          <p className="text-sm font-bold mb-2">&#9993; check your email</p>
+          <p className="flex items-center justify-center gap-1.5 text-sm font-bold mb-2"><MailCheck size={16} strokeWidth={1.75} /> check your email</p>
           <p className="text-xs text-[var(--muted)] mb-4">
             We sent a confirmation link to <span className="font-bold">{email}</span>.
             <br />

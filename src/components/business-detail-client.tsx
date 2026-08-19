@@ -9,6 +9,7 @@ import EventCard from "@/components/event-card"
 import QrCode from "@/components/qr-code"
 import type { Business, Post, Event } from "@/types"
 import BusinessImage from "@/components/business-image"
+import { MapPin, Clock, Heart, Phone, Mail, Globe } from "lucide-react"
 
 export default function BusinessDetailClient({
   business: initialBusiness,
@@ -111,19 +112,19 @@ export default function BusinessDetailClient({
           )}
 
           <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <div className="space-y-0.5 text-xs text-[var(--muted)]">
-              {business.location && <div>&#9906; {business.location}</div>}
-              {business.hours && <div>&#128338; {business.hours}</div>}
-              <div className="font-semibold text-[var(--fg)]">&#9829; {business.followers} followers</div>
+            <div className="space-y-1 text-xs text-[var(--muted)]">
+              {business.location && <div className="flex items-center gap-1.5"><MapPin size={12} strokeWidth={1.75} /> {business.location}</div>}
+              {business.hours && <div className="flex items-center gap-1.5"><Clock size={12} strokeWidth={1.75} /> {business.hours}</div>}
+              <div className="flex items-center gap-1.5 font-semibold text-[var(--fg)]"><Heart size={12} strokeWidth={1.75} /> {business.followers} followers</div>
             </div>
 
             {(business.phone || business.email || business.website) && (
-              <div className="space-y-0.5 text-xs text-[var(--muted)]">
-                {business.phone && <div>&#9742; {business.phone}</div>}
-                {business.email && <div>&#9993; {business.email}</div>}
+              <div className="space-y-1 text-xs text-[var(--muted)]">
+                {business.phone && <div className="flex items-center gap-1.5"><Phone size={12} strokeWidth={1.75} /> {business.phone}</div>}
+                {business.email && <div className="flex items-center gap-1.5"><Mail size={12} strokeWidth={1.75} /> {business.email}</div>}
                 {business.website && (
-                  <div>
-                    &#128279;{" "}
+                  <div className="flex items-center gap-1.5">
+                    <Globe size={12} strokeWidth={1.75} />{" "}
                     <a
                       href={business.website.startsWith("http") ? business.website : `https://${business.website}`}
                       target="_blank"
@@ -139,7 +140,7 @@ export default function BusinessDetailClient({
 
             <div className="flex items-start gap-3">
               <div className="border border-[var(--hr)] p-1.5 shrink-0">
-                <QrCode value={`pulse://${business.id}`} size={64} />
+                <QrCode value={`${typeof window !== "undefined" ? window.location.origin : ""}/check-in/scan?token=${business.qrToken ?? business.id}`} size={64} />
               </div>
               <div className="text-[11px] text-[var(--muted)] leading-snug pt-0.5">
                 scan this QR to check in

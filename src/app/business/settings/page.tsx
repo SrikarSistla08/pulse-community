@@ -19,7 +19,7 @@ export default async function BusinessSettingsPage() {
 
   const { data: business } = await supabase
     .from("businesses")
-    .select("id, name, category, description, location, phone, email, website, hours, tags, logo_url, cover_url, student_discount")
+    .select("id, name, category, description, location, phone, email, website, hours, tags, logo_url, cover_url, student_discount, qr_token")
     .eq("owner_id", user.id)
     .limit(1)
     .maybeSingle()

@@ -5,6 +5,7 @@ import { useState } from "react"
 import { useSupabase, useCurrentUser } from "@/lib/supabase/hooks"
 import { followBusiness, unfollowBusiness } from "@/lib/supabase/queries"
 import SectionHeader from "@/components/section-header"
+import { MapPin } from "lucide-react"
 import type { Business } from "@/types"
 import BusinessImage from "@/components/business-image"
 
@@ -36,7 +37,7 @@ export default function NearbyBusinesses({ businesses }: { businesses: Business[
                 <h3 className="text-xs font-bold truncate">{biz.name}</h3>
                 <p className="text-[10px] text-[var(--muted)] truncate">{biz.category}</p>
                 <p className="text-[10px] text-[var(--muted)] truncate">
-                  &#9906; {biz.location}
+                  <MapPin size={10} strokeWidth={1.75} /> {biz.location}
                 </p>
               </div>
             </Link>
